@@ -41,14 +41,6 @@ html,body{margin:0;padding:0;height:100%;background:#0B0C0F;color:#F2F2F0;overfl
 #c-cal{left:32px;top:452px;width:363px;height:350px;padding:24px 24px 20px}
 #c-music{left:799px;top:32px;width:363px;height:474px;padding:12px}
 #c-week{left:799px;top:526px;width:363px;height:276px;padding:22px 24px}
-#c-ctrl{display:none;left:799px;top:428px;width:363px;height:150px;padding:16px 24px;-webkit-justify-content:space-between;justify-content:space-between}
-.sp #c-music{height:376px}
-.sp #c-ctrl{display:-webkit-box;display:-webkit-flex;display:flex}
-.sp #c-week{top:598px;height:204px;padding:16px 24px}
-.sp #week{margin-top:6px!important}
-.sp .wrow{height:34px}
-.sp .wrow:nth-child(n+5){display:none}
-#c-ctrl.off .mb,#c-ctrl.off #m-seek{opacity:.35}
 
 /* 時計 */
 .cap{font-size:15px;font-weight:500;letter-spacing:.08em}
@@ -96,15 +88,31 @@ html,body{margin:0;padding:0;height:100%;background:#0B0C0F;color:#F2F2F0;overfl
 
 /* ミュージック */
 #c-music iframe{width:100%;height:100%;border:0;border-radius:22px;background:transparent}
-.sp #sp-embed,.sp #c-music iframe{display:block;width:100%!important;height:352px!important;border-radius:14px}
 .art{width:112px;height:112px;border-radius:18px;background:#2A2D35;-webkit-flex-shrink:0;flex-shrink:0;overflow:hidden}
-.bar{height:4px;border-radius:2px;background:#2A2D35;overflow:hidden}
-#m-fill{height:4px;width:0;background:#F2F2F0}
-#m-seek{padding:8px 0;margin-top:-8px}
-.mb{width:48px;height:48px;border:0;border-radius:50%;background:transparent;color:#F2F2F0;padding:0;margin:0 9px;cursor:pointer}
-.mb svg{display:block;margin:0 auto}
-.mb.play{width:64px;height:64px;background:#F2F2F0;color:#0B0C0F}
-.mb:active{opacity:.6}
+/* レコードプレーヤー（Spotify） */
+#tt{display:block;height:100%;color:#F2F2F0;text-decoration:none;position:relative}
+#tt:active .deck{-webkit-transform:scale(.97);transform:scale(.97)}
+.tt-src{font-size:13px;font-weight:500;letter-spacing:.06em}
+#tt-title{font-size:19px;font-weight:500;margin-top:6px}
+.deck{position:relative;width:315px;height:300px;margin:22px auto 0;-webkit-transition:-webkit-transform .15s;transition:transform .15s}
+.platter{position:absolute;left:0;top:10px;width:280px;height:280px;border-radius:50%;background:#0E0F12;box-shadow:0 0 0 1px #22252C}
+.disc{position:absolute;left:10px;top:10px;width:260px;height:260px;border-radius:50%;
+  background:-webkit-repeating-radial-gradient(center,circle,#141518 0,#141518 2px,#1C1D21 3px,#141518 4px);
+  background:repeating-radial-gradient(circle at center,#141518 0,#141518 2px,#1C1D21 3px,#141518 4px);
+  -webkit-animation:spin 1.8s linear infinite;animation:spin 1.8s linear infinite;-webkit-transform:translateZ(0)}
+.label{position:absolute;left:80px;top:80px;width:100px;height:100px;border-radius:50%;background-size:cover;background-position:center;overflow:hidden}
+.label .l1{position:absolute;left:0;right:0;top:22px;text-align:center;font-size:10px;font-weight:600;letter-spacing:.12em;color:#0B0C0F}
+.label .l2{position:absolute;left:0;right:0;bottom:22px;text-align:center;font-size:9px;letter-spacing:.08em;color:rgba(11,12,15,.7)}
+.spindle{position:absolute;left:125px;top:125px;width:10px;height:10px;border-radius:50%;background:#0B0C0F;box-shadow:0 0 0 2px rgba(255,255,255,.25)}
+.sheen{position:absolute;left:10px;top:10px;width:260px;height:260px;border-radius:50%;pointer-events:none;
+  background:-webkit-linear-gradient(135deg,rgba(255,255,255,0) 30%,rgba(255,255,255,.07) 45%,rgba(255,255,255,0) 60%);
+  background:linear-gradient(135deg,rgba(255,255,255,0) 30%,rgba(255,255,255,.07) 45%,rgba(255,255,255,0) 60%)}
+.arm{position:absolute;right:0;top:0}
+.tt-go{position:absolute;left:0;right:0;bottom:0;font-size:14px}
+.tt-go svg{margin-left:6px}
+@-webkit-keyframes spin{from{-webkit-transform:rotate(0)}to{-webkit-transform:rotate(360deg)}}
+@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}
+body.night .disc{-webkit-animation-play-state:paused;animation-play-state:paused}
 
 /* 夜間減光・設定 */
 #dim{position:fixed;top:0;left:0;right:0;bottom:0;background:#000;opacity:0;pointer-events:none;-webkit-transition:opacity 2s;transition:opacity 2s;z-index:5}
@@ -149,20 +157,6 @@ body.night #dim{opacity:.78}
     <div id="cal" class="in grow fx col between"></div>
   </section>
 
-  <!-- 再生操作（Spotifyのときだけ表示） -->
-  <section class="card off" id="c-ctrl">
-    <div>
-      <div id="m-seek"><div class="bar"><div id="m-fill"></div></div></div>
-      <div class="fx between muted in tab" style="font-size:12px;margin-top:6px"><span id="m-cur">0:00</span><span id="m-rem">-0:00</span></div>
-    </div>
-    <div class="fx aic center">
-      <button class="mb" id="m-restart" aria-label="曲の頭に戻る"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="4" y="5" width="2.2" height="14" rx="1"></rect><path d="M20 5v14L8.5 12z"></path></svg></button>
-      <button class="mb" id="m-back" aria-label="15秒戻す"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6"></path><path d="M3 3.5V8h4.5"></path><text x="12.5" y="15" text-anchor="middle" font-size="7.5" font-weight="600" fill="currentColor" stroke="none" font-family="Inter,sans-serif">15</text></svg></button>
-      <button class="mb play" id="m-play" aria-label="再生"></button>
-      <button class="mb" id="m-fwd" aria-label="15秒送る"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"></path><path d="M21 3.5V8h-4.5"></path><text x="11.5" y="15" text-anchor="middle" font-size="7.5" font-weight="600" fill="currentColor" stroke="none" font-family="Inter,sans-serif">15</text></svg></button>
-    </div>
-  </section>
-
   <!-- 週間予報 -->
   <section class="card jp" id="c-week">
     <div class="head">週間予報</div>
@@ -177,7 +171,7 @@ body.night #dim{opacity:.78}
 <button id="gear" aria-label="設定"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button>
 
 <div id="modal"><div class="box jp">
-  <h2>設定 <span class="muted" style="font-size:13px;font-weight:400">ver 2026-10-23d</span></h2>
+  <h2>設定 <span class="muted" style="font-size:13px;font-weight:400">ver 2026-10-24a</span></h2>
   <div class="fx row">
     <div><label for="s_clockLabel">時計の見出し</label><input id="s_clockLabel"></div>
     <div><label for="s_accent">アクセント色</label><input id="s_accent" placeholder="#FF9F45"></div>
@@ -377,72 +371,55 @@ body.night #dim{opacity:.78}
     $('holiday').innerHTML = hol ? esc(hol) : '';
   }
 
-  /* ---------- ミュージック（Apple Music / Spotify の埋め込み） ---------- */
-  var I_PLAY = '<svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"></path></svg>';
-  var I_PAUSE = '<svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"></rect><rect x="14" y="4" width="4" height="16" rx="1"></rect></svg>';
-  var sp = null, spSt = { paused: true, pos: 0, dur: 0 };
-
-  // Spotify の共有URL → spotify:playlist:ID など
+  /* ---------- ミュージック（Apple Music 埋め込み / Spotify はレコードプレーヤー） ---------- */
+  // Spotify の共有URL → { type, id }
   function parseSpotify(u) {
     var m = /open\.spotify\.com\/(?:intl-[a-z-]+\/)?(playlist|album|track|episode|show|artist)\/([A-Za-z0-9]+)/i.exec(u || '');
-    return m ? 'spotify:' + m[1].toLowerCase() + ':' + m[2] : null;
+    return m ? { type: m[1].toLowerCase(), id: m[2] } : null;
   }
-  function mmss(t) { t = Math.max(0, Math.floor(t || 0)); return Math.floor(t / 60) + ':' + pad(t % 60); }
+  var KIND = { playlist: 'PLAYLIST', album: 'ALBUM', track: 'SINGLE', episode: 'EPISODE', show: 'PODCAST', artist: 'ARTIST' };
 
-  function spUpdate() {
-    $('m-play').innerHTML = spSt.paused ? I_PLAY : I_PAUSE;
-    $('m-play').setAttribute('aria-label', spSt.paused ? '再生' : '一時停止');
-    $('m-fill').style.width = (spSt.dur ? Math.min(100, spSt.pos / spSt.dur * 100) : 0) + '%';
-    $('m-cur').innerHTML = mmss(spSt.pos);
-    $('m-rem').innerHTML = '-' + mmss(spSt.dur - spSt.pos);
-    $('c-ctrl').className = 'card' + (sp ? '' : ' off');
-  }
-  function spSeek(t) { if (sp && spSt.dur) { spSt.pos = Math.max(0, Math.min(spSt.dur - 1, t)); sp.seek(spSt.pos); spUpdate(); } }
-
-  // iPadのSafariで埋め込みが小さく表示されないよう、高さを直接指定する
-  function spFixSize() {
-    var f = $('c-music').getElementsByTagName('iframe')[0];
-    if (!f) return;
-    f.setAttribute('height', '352'); f.setAttribute('width', '100%');
-    f.style.height = '352px'; f.style.width = '100%'; f.style.display = 'block';
-  }
-
-  function renderSpotify(uri) {
+  // レコードが回るカード。タップで Spotify アプリの該当ページを開く
+  function renderTurntable(sp) {
     var box = $('c-music');
-    box.style.padding = '12px';
-    box.innerHTML = '<div id="sp-wrap" style="height:352px;overflow:hidden;border-radius:14px"><div id="sp-embed"></div></div>';
-    $('m-play').onclick = function () { if (sp) sp.togglePlay(); };
-    $('m-restart').onclick = function () { if (sp) sp.restart(); };
-    $('m-back').onclick = function () { spSeek(spSt.pos - 15); };
-    $('m-fwd').onclick = function () { spSeek(spSt.pos + 15); };
-    $('m-seek').onclick = function (e) {
-      var r = this.getBoundingClientRect();
-      if (r.width) spSeek((e.clientX - r.left) / r.width * spSt.dur);
-    };
-    spUpdate();
-    window.onSpotifyIframeApiReady = function (API) {
-      API.createController($('sp-embed'), { uri: uri, width: '100%', height: 352 }, function (c) {
-        sp = c;
-        spFixSize(); setTimeout(spFixSize, 1000); setTimeout(spFixSize, 4000);
-        c.addListener('playback_update', function (e) {
-          var d = (e && e.data) || {};
-          spSt.paused = !!d.isPaused; spSt.pos = (d.position || 0) / 1000; spSt.dur = (d.duration || 0) / 1000;
-          spUpdate();
-        });
-        spUpdate();
-      });
-    };
-    var s = document.createElement('script');
-    s.src = 'https://open.spotify.com/embed/iframe-api/v1';
-    s.async = true;
-    s.onerror = function () { box.innerHTML = '<div class="hint" style="padding:12px">Spotifyのプレーヤーを読み込めませんでした。</div>'; };
-    document.head.appendChild(s);
+    box.style.padding = '24px';
+    box.innerHTML =
+      '<a id="tt" href="spotify:' + sp.type + ':' + sp.id + '" aria-label="Spotifyで開く">' +
+        '<div class="tt-src" style="color:' + ACC + '">SPOTIFY</div>' +
+        '<div class="ell" id="tt-title">プレイリスト</div>' +
+        '<div class="deck">' +
+          '<div class="platter"></div>' +
+          '<div class="disc"><div class="label" id="tt-label" style="background-color:' + ACC + '">' +
+            '<div class="l1 in">' + (KIND[sp.type] || 'SPOTIFY') + '</div><div class="l2 in">33⅓ RPM</div></div>' +
+            '<div class="spindle"></div></div>' +
+          '<div class="sheen"></div>' +
+          '<svg class="arm" width="110" height="250" viewBox="0 0 110 250" fill="none" aria-hidden="true">' +
+            '<circle cx="78" cy="30" r="20" fill="#22252C" stroke="#2F333B" stroke-width="2"></circle>' +
+            '<circle cx="78" cy="30" r="7" fill="#9A9DA6"></circle>' +
+            '<path d="M78 30 L84 150 L52 205" stroke="#C9CBD0" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"></path>' +
+            '<rect x="34" y="198" width="26" height="16" rx="3" transform="rotate(32 47 206)" fill="#C9CBD0"></rect>' +
+          '</svg>' +
+        '</div>' +
+        '<div class="tt-go fx aic center muted">タップして Spotify で再生' +
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"></path></svg>' +
+        '</div>' +
+      '</a>';
+    // タイトルとジャケットを取得（取れなければ既定の表示のまま）
+    get('https://open.spotify.com/oembed?url=' + encodeURIComponent('https://open.spotify.com/' + sp.type + '/' + sp.id), function (err, txt) {
+      if (err) return;
+      var j; try { j = JSON.parse(txt); } catch (e) { return; }
+      if (j.title) $('tt-title').innerHTML = esc(j.title);
+      if (j.thumbnail_url) {
+        var l = $('tt-label');
+        l.style.backgroundImage = 'url("' + String(j.thumbnail_url).replace(/["\\]/g, '') + '")';
+        l.innerHTML = '';
+      }
+    });
   }
 
   function renderMusic() {
-    var box = $('c-music'), uri = parseSpotify(cfg.music);
-    document.documentElement.className = uri ? 'sp' : '';
-    if (uri) { renderSpotify(uri); return; }
+    var box = $('c-music'), sp = parseSpotify(cfg.music);
+    if (sp) { renderTurntable(sp); return; }
     if (!cfg.music) {
       box.style.padding = '24px';
       box.innerHTML = '<div class="fx aic"><div class="art fx aic center">' +
