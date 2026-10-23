@@ -39,7 +39,16 @@ html,body{margin:0;padding:0;height:100%;background:#0B0C0F;color:#F2F2F0;overfl
 #c-clock{left:32px;top:32px;width:747px;height:400px;padding:36px 44px;-webkit-justify-content:space-between;justify-content:space-between}
 #c-weather{left:415.5px;top:452px;width:363px;height:350px;padding:28px;-webkit-justify-content:space-between;justify-content:space-between}
 #c-cal{left:32px;top:452px;width:363px;height:350px;padding:24px 24px 20px}
-#c-music{left:799px;top:32px;width:363px;height:770px;padding:12px}
+#c-music{left:799px;top:32px;width:363px;height:474px;padding:12px}
+#c-week{left:799px;top:526px;width:363px;height:276px;padding:22px 24px}
+#c-ctrl{display:none;left:799px;top:428px;width:363px;height:150px;padding:16px 24px;-webkit-justify-content:space-between;justify-content:space-between}
+.sp #c-music{height:376px}
+.sp #c-ctrl{display:-webkit-box;display:-webkit-flex;display:flex}
+.sp #c-week{top:598px;height:204px;padding:16px 24px}
+.sp #week{margin-top:6px!important}
+.sp .wrow{height:34px}
+.sp .wrow:nth-child(n+5){display:none}
+#c-ctrl.off .mb,#c-ctrl.off #m-seek{opacity:.35}
 
 /* 時計 */
 .cap{font-size:15px;font-weight:500;letter-spacing:.08em}
@@ -72,13 +81,22 @@ html,body{margin:0;padding:0;height:100%;background:#0B0C0F;color:#F2F2F0;overfl
 
 .hint{font-size:14px;line-height:1.7;color:#9A9DA6}
 
+/* 週間予報 */
+.wrow{height:38px;border-top:1px solid #22252C}
+.wrow:first-child{border-top:0}
+.wrow .wd{width:72px;font-size:15px}
+.wrow .wi{width:36px}
+.wrow .wi svg{display:block}
+.wrow .wp{font-size:13px;color:#6FA8FF;width:52px}
+.wrow .lo,.wrow .hi{width:44px;text-align:right;font-size:15px}
+
 /* ミュージック */
 #c-music iframe{width:100%;height:100%;border:0;border-radius:22px;background:transparent}
 .art{width:112px;height:112px;border-radius:18px;background:#2A2D35;-webkit-flex-shrink:0;flex-shrink:0;overflow:hidden}
-.art img{width:112px;height:112px;display:block;object-fit:cover}
 .bar{height:4px;border-radius:2px;background:#2A2D35;overflow:hidden}
 #m-fill{height:4px;width:0;background:#F2F2F0}
-.mb{width:52px;height:52px;border:0;border-radius:50%;background:transparent;color:#F2F2F0;padding:0;margin:0 14px;cursor:pointer}
+#m-seek{padding:8px 0;margin-top:-8px}
+.mb{width:48px;height:48px;border:0;border-radius:50%;background:transparent;color:#F2F2F0;padding:0;margin:0 9px;cursor:pointer}
 .mb svg{display:block;margin:0 auto}
 .mb.play{width:64px;height:64px;background:#F2F2F0;color:#0B0C0F}
 .mb:active{opacity:.6}
@@ -126,6 +144,26 @@ body.night #dim{opacity:.78}
     <div id="cal" class="in grow fx col between"></div>
   </section>
 
+  <!-- 再生操作（Spotifyのときだけ表示） -->
+  <section class="card off" id="c-ctrl">
+    <div>
+      <div id="m-seek"><div class="bar"><div id="m-fill"></div></div></div>
+      <div class="fx between muted in tab" style="font-size:12px;margin-top:6px"><span id="m-cur">0:00</span><span id="m-rem">-0:00</span></div>
+    </div>
+    <div class="fx aic center">
+      <button class="mb" id="m-restart" aria-label="曲の頭に戻る"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="4" y="5" width="2.2" height="14" rx="1"></rect><path d="M20 5v14L8.5 12z"></path></svg></button>
+      <button class="mb" id="m-back" aria-label="15秒戻す"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 12a8.5 8.5 0 1 0 2.5-6"></path><path d="M3 3.5V8h4.5"></path><text x="12.5" y="15" text-anchor="middle" font-size="7.5" font-weight="600" fill="currentColor" stroke="none" font-family="Inter,sans-serif">15</text></svg></button>
+      <button class="mb play" id="m-play" aria-label="再生"></button>
+      <button class="mb" id="m-fwd" aria-label="15秒送る"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.5 12a8.5 8.5 0 1 1-2.5-6"></path><path d="M21 3.5V8h-4.5"></path><text x="11.5" y="15" text-anchor="middle" font-size="7.5" font-weight="600" fill="currentColor" stroke="none" font-family="Inter,sans-serif">15</text></svg></button>
+    </div>
+  </section>
+
+  <!-- 週間予報 -->
+  <section class="card jp" id="c-week">
+    <div class="head">週間予報</div>
+    <div id="week" style="margin-top:10px"></div>
+  </section>
+
   <!-- ミュージック -->
   <section class="card jp" id="c-music"></section>
 </div>
@@ -145,10 +183,8 @@ body.night #dim{opacity:.78}
     <div><label for="s_lon">経度</label><input id="s_lon" inputmode="decimal"></div>
   </div>
   <button id="s_geo">現在地を使う</button>
-  <label for="s_music">Apple Music の共有URL（プレイリスト・アルバム・ステーション）</label>
-  <input id="s_music" placeholder="https://music.apple.com/jp/playlist/...">
-  <label for="s_mkToken">MusicKit トークンURL（例: https://xxx.workers.dev/musickit-token）または開発者トークン。空なら埋め込みプレーヤー</label>
-  <input id="s_mkToken">
+  <label for="s_music">Apple Music または Spotify の共有URL（プレイリスト・アルバムなど）</label>
+  <input id="s_music" placeholder="https://music.apple.com/... または https://open.spotify.com/...">
   <div class="fx row">
     <div><label for="s_nightStart">夜間減光 開始(時)</label><input id="s_nightStart" inputmode="numeric"></div>
     <div><label for="s_nightEnd">夜間減光 終了(時)</label><input id="s_nightEnd" inputmode="numeric"></div>
@@ -162,7 +198,7 @@ body.night #dim{opacity:.78}
   'use strict';
   var W = 1194, H = 834;
   var DEFAULTS = { clockLabel: 'TOKYO', accent: '#FF9F45', place: '東京都', lat: 35.6812, lon: 139.7671,
-                   music: '', mkToken: '', nightStart: 23, nightEnd: 6, reloadHours: 6 };
+                   music: '', nightStart: 23, nightEnd: 6, reloadHours: 6 };
   var KEY = 'kioskCfg';
   var WD = ['日', '月', '火', '水', '木', '金', '土'];
   var cfg = loadCfg();
@@ -180,7 +216,6 @@ body.night #dim{opacity:.78}
     try { s = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
     for (k in DEFAULTS) c[k] = (s && s.hasOwnProperty(k) && s[k] !== '') ? s[k] : DEFAULTS[k];
     if (s && s.hasOwnProperty('music')) c.music = s.music;
-    if (s && s.hasOwnProperty('mkToken')) c.mkToken = s.mkToken;
     return c;
   }
 
@@ -266,8 +301,8 @@ body.night #dim{opacity:.78}
     var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + cfg.lat + '&longitude=' + cfg.lon +
       '&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,is_day' +
       '&hourly=temperature_2m,weather_code,is_day' +
-      '&daily=temperature_2m_max,temperature_2m_min' +
-      '&timezone=auto&forecast_days=2&wind_speed_unit=ms';
+      '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max' +
+      '&timezone=auto&forecast_days=6&wind_speed_unit=ms';
     get(url, function (err, txt) {
       if (err) { $('wdesc').innerHTML = '天気を取得できません'; return; }
       var j; try { j = JSON.parse(txt); } catch (e) { return; }
@@ -288,6 +323,18 @@ body.night #dim{opacity:.78}
           '<span class="t in">' + Math.round(hr.temperature_2m[k]) + '°</span></div>';
       }
       $('hourly').innerHTML = h;
+      // 週間予報（明日から5日）
+      var w = '';
+      for (var q = 1; q < dl.time.length && q <= 5; q++) {
+        var dp = dl.time[q].split('-'), dd = new Date(+dp[0], +dp[1] - 1, +dp[2]);
+        var pr = dl.precipitation_probability_max ? dl.precipitation_probability_max[q] : null;
+        w += '<div class="fx aic wrow"><span class="wd">' + (q === 1 ? '明日' : WD[dd.getDay()] + '曜日') + '</span>' +
+          '<span class="wi">' + icon(dl.weather_code[q], 1, 24) + '</span>' +
+          '<span class="wp in">' + (pr == null ? '' : pr + '%') + '</span><span class="grow"></span>' +
+          '<span class="lo in muted">' + Math.round(dl.temperature_2m_min[q]) + '°</span>' +
+          '<span class="hi in">' + Math.round(dl.temperature_2m_max[q]) + '°</span></div>';
+      }
+      $('week').innerHTML = w;
     });
   }
 
@@ -322,127 +369,70 @@ body.night #dim{opacity:.78}
     $('holiday').innerHTML = hol ? esc(hol) : '';
   }
 
-  /* ---------- Apple Music ---------- */
-  var NOTE = svg(40, 1.5, '<g stroke="' + GREY + '"><path d="M9 18V5l11-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="17" cy="16" r="3"></circle></g>');
+  /* ---------- ミュージック（Apple Music / Spotify の埋め込み） ---------- */
   var I_PLAY = '<svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"></path></svg>';
   var I_PAUSE = '<svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"></rect><rect x="14" y="4" width="4" height="16" rx="1"></rect></svg>';
-  var I_PREV = '<svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11 12l9-6v12zM2 12l9-6v12z"></path></svg>';
-  var I_NEXT = '<svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 12L4 6v12zM22 12l-9-6v12z"></path></svg>';
-  var mk = null, mkDesc = null, mkQueued = false, mkArt = '';
+  var sp = null, spSt = { paused: true, pos: 0, dur: 0 };
 
-  // 共有URL → { type: playlist|album|station, id }
-  function parseMusicUrl(u) {
-    var m = /music\.apple\.com\/[a-z]{2}\/(playlist|album|station)\/[^\/]*\/([^\/?#]+)/i.exec(u || '');
-    return m ? { type: m[1].toLowerCase(), id: m[2] } : null;
+  // Spotify の共有URL → spotify:playlist:ID など
+  function parseSpotify(u) {
+    var m = /open\.spotify\.com\/(?:intl-[a-z-]+\/)?(playlist|album|track|episode|show|artist)\/([A-Za-z0-9]+)/i.exec(u || '');
+    return m ? 'spotify:' + m[1].toLowerCase() + ':' + m[2] : null;
   }
   function mmss(t) { t = Math.max(0, Math.floor(t || 0)); return Math.floor(t / 60) + ':' + pad(t % 60); }
 
-  function renderPlayer() {
-    var box = $('c-music');
-    box.style.padding = '24px';
-    box.style.webkitJustifyContent = box.style.justifyContent = 'space-between';
-    box.innerHTML =
-      '<div class="fx aic"><div class="art fx aic center" id="m-art">' + NOTE + '</div>' +
-      '<div style="margin-left:16px;min-width:0;-webkit-flex:1;flex:1"><div class="small" id="m-state" style="letter-spacing:.06em;color:' + ACC + '">APPLE MUSIC</div>' +
-      '<div class="ell" id="m-title" style="font-size:19px;font-weight:500;margin-top:6px">読み込み中</div>' +
-      '<div class="ell muted" id="m-artist" style="font-size:14px;margin-top:6px"></div></div></div>' +
-      '<div><div class="bar"><div id="m-fill"></div></div>' +
-      '<div class="fx between muted in tab" style="font-size:12px;margin-top:8px"><span id="m-cur">0:00</span><span id="m-rem">-0:00</span></div></div>' +
-      '<div class="fx aic center"><button class="mb" id="m-prev" aria-label="前の曲">' + I_PREV + '</button>' +
-      '<button class="mb play" id="m-play" aria-label="再生">' + I_PLAY + '</button>' +
-      '<button class="mb" id="m-next" aria-label="次の曲">' + I_NEXT + '</button></div>';
+  function spUpdate() {
+    $('m-play').innerHTML = spSt.paused ? I_PLAY : I_PAUSE;
+    $('m-play').setAttribute('aria-label', spSt.paused ? '再生' : '一時停止');
+    $('m-fill').style.width = (spSt.dur ? Math.min(100, spSt.pos / spSt.dur * 100) : 0) + '%';
+    $('m-cur').innerHTML = mmss(spSt.pos);
+    $('m-rem').innerHTML = '-' + mmss(spSt.dur - spSt.pos);
+    $('c-ctrl').className = 'card' + (sp ? '' : ' off');
   }
-  function mkMsg(title, sub) { $('m-title').innerHTML = esc(title); $('m-artist').innerHTML = esc(sub || ''); }
-  function mkFail(msg) {
-    if (mk) return;
-    if (cfg.music) { cfg.mkToken = ''; renderMusic(); } // 埋め込みプレーヤーに切り替え
-    else mkMsg(msg, '');
-  }
+  function spSeek(t) { if (sp && spSt.dur) { spSt.pos = Math.max(0, Math.min(spSt.dur - 1, t)); sp.seek(spSt.pos); spUpdate(); } }
 
-  function mkUpdate() {
-    if (!mk) return;
-    var playing = !!mk.isPlaying, it = mk.nowPlayingItem;
-    $('m-play').innerHTML = playing ? I_PAUSE : I_PLAY;
-    $('m-play').setAttribute('aria-label', playing ? '一時停止' : '再生');
-    $('m-state').innerHTML = !mk.isAuthorized ? 'APPLE MUSIC' : (playing ? '再生中' : '一時停止');
-    if (it) {
-      var a = it.attributes || {};
-      mkMsg(it.title || a.name || '', it.artistName || a.artistName || '');
-      var art = it.artwork || a.artwork, url = '';
-      try { if (art) url = MusicKit.formatArtworkURL(art, 224, 224); } catch (e) {}
-      if (url && url !== mkArt) { mkArt = url; $('m-art').innerHTML = '<img alt="" src="' + esc(url) + '">'; }
-    }
-    mkTime();
-  }
-  function mkTime() {
-    if (!mk) return;
-    var cur = mk.currentPlaybackTime || 0, dur = mk.currentPlaybackDuration || 0;
-    $('m-fill').style.width = (dur ? Math.min(100, cur / dur * 100) : 0) + '%';
-    $('m-cur').innerHTML = mmss(cur);
-    $('m-rem').innerHTML = '-' + mmss(dur - cur);
-  }
-  function mkQueue() {
-    if (mkQueued) return Promise.resolve();
-    var o = { startPlaying: false }; o[mkDesc.type] = mkDesc.id;
-    return mk.setQueue(o).then(function () { mkQueued = true; mkUpdate(); });
-  }
-  // サインイン → キュー設定 → 操作
-  function mkDo(fn) {
-    if (!mk) return;
-    var p = mk.isAuthorized ? Promise.resolve() : mk.authorize();
-    p.then(mkQueue).then(fn).then(mkUpdate)['catch'](function () { mkMsg('操作できませんでした', 'もう一度タップしてください'); });
-  }
-  function mkSetup(inst) {
-    mk = inst;
-    ['playbackStateDidChange', 'nowPlayingItemDidChange', 'authorizationStatusDidChange'].forEach(function (n) { mk.addEventListener(n, mkUpdate); });
-    mk.addEventListener('playbackTimeDidChange', mkTime);
-    $('m-play').onclick = function () { mkDo(function () { return mk.isPlaying ? mk.pause() : mk.play(); }); };
-    $('m-next').onclick = function () { mkDo(function () { return mk.skipToNextItem(); }); };
-    $('m-prev').onclick = function () { mkDo(function () { return mk.currentPlaybackTime > 3 ? mk.seekToTime(0) : mk.skipToPreviousItem(); }); };
-    if (mk.isAuthorized) mkQueue().then(mkUpdate)['catch'](function () { mkMsg('プレイリストを読み込めません', ''); });
-    else mkMsg('サインインが必要です', '再生ボタンを押すとサインイン画面が開きます');
-    mkUpdate();
-  }
-  function mkStart(token) {
-    var done = false;
-    function loaded() {
-      if (done || !window.MusicKit) return; done = true;
-      try {
-        var r = MusicKit.configure({ developerToken: token, app: { name: 'Kiosk', build: '1.0' } });
-        if (r && r.then) r.then(function (i) { mkSetup(i || MusicKit.getInstance()); }, function () { mkFail('MusicKitを初期化できません（トークンを確認）'); });
-        else mkSetup(MusicKit.getInstance());
-      } catch (e) { mkFail('MusicKitを初期化できません'); }
-    }
-    document.addEventListener('musickitloaded', loaded, false);
+  function renderSpotify(uri) {
+    var box = $('c-music');
+    box.style.padding = '12px';
+    box.innerHTML = '<div id="sp-embed"></div>';
+    $('m-play').onclick = function () { if (sp) sp.togglePlay(); };
+    $('m-restart').onclick = function () { if (sp) sp.restart(); };
+    $('m-back').onclick = function () { spSeek(spSt.pos - 15); };
+    $('m-fwd').onclick = function () { spSeek(spSt.pos + 15); };
+    $('m-seek').onclick = function (e) {
+      var r = this.getBoundingClientRect();
+      if (r.width) spSeek((e.clientX - r.left) / r.width * spSt.dur);
+    };
+    spUpdate();
+    window.onSpotifyIframeApiReady = function (API) {
+      API.createController($('sp-embed'), { uri: uri, width: '100%', height: 352 }, function (c) {
+        sp = c;
+        c.addListener('playback_update', function (e) {
+          var d = (e && e.data) || {};
+          spSt.paused = !!d.isPaused; spSt.pos = (d.position || 0) / 1000; spSt.dur = (d.duration || 0) / 1000;
+          spUpdate();
+        });
+        spUpdate();
+      });
+    };
     var s = document.createElement('script');
-    s.src = 'https://js-cdn.music.apple.com/musickit/v3/musickit.js';
+    s.src = 'https://open.spotify.com/embed/iframe-api/v1';
     s.async = true;
-    s.onerror = function () { mkFail('MusicKitを読み込めません'); };
+    s.onerror = function () { box.innerHTML = '<div class="hint" style="padding:12px">Spotifyのプレーヤーを読み込めませんでした。</div>'; };
     document.head.appendChild(s);
-    setTimeout(loaded, 4000);
-    setTimeout(function () { if (!done) mkFail('この端末ではMusicKitが動きません'); }, 20000);
-  }
-  function renderMusicKit() {
-    renderPlayer();
-    var t = String(cfg.mkToken);
-    if (!/^https?:\/\//i.test(t)) { mkStart(t); return; }
-    get(t, function (err, txt) {
-      if (err || !txt) { mkFail('トークンを取得できません'); return; }
-      mkStart(txt.replace(/^\s+|\s+$/g, ''));
-    });
   }
 
   function renderMusic() {
-    var box = $('c-music');
-    mkDesc = parseMusicUrl(cfg.music);
-    if (cfg.mkToken && mkDesc) { renderMusicKit(); return; }
+    var box = $('c-music'), uri = parseSpotify(cfg.music);
+    document.documentElement.className = uri ? 'sp' : '';
+    if (uri) { renderSpotify(uri); return; }
     if (!cfg.music) {
       box.style.padding = '24px';
       box.innerHTML = '<div class="fx aic"><div class="art fx aic center">' +
         svg(40, 1.5, '<g stroke="' + GREY + '"><path d="M9 18V5l11-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="17" cy="16" r="3"></circle></g>') +
-        '</div><div style="margin-left:16px;min-width:0"><div class="small" style="letter-spacing:.06em;color:' + ACC + '">APPLE MUSIC</div>' +
+        '</div><div style="margin-left:16px;min-width:0"><div class="small" style="letter-spacing:.06em;color:' + ACC + '">MUSIC</div>' +
         '<div style="font-size:19px;font-weight:500;margin-top:6px">未設定</div></div></div>' +
-        '<div class="hint" style="margin-top:24px">右下の歯車から、Apple Music のプレイリストやアルバムの共有URLを登録すると、ここにプレーヤーが表示されます。</div>';
+        '<div class="hint" style="margin-top:24px">右下の歯車から、Apple Music か Spotify のプレイリストやアルバムの共有URLを登録すると、ここにプレーヤーが表示されます。</div>';
       return;
     }
     box.style.padding = '12px';
@@ -453,7 +443,7 @@ body.night #dim{opacity:.78}
   }
 
   /* ---------- 設定画面 ---------- */
-  var FIELDS = ['clockLabel', 'accent', 'place', 'lat', 'lon', 'music', 'mkToken', 'nightStart', 'nightEnd', 'reloadHours'];
+  var FIELDS = ['clockLabel', 'accent', 'place', 'lat', 'lon', 'music', 'nightStart', 'nightEnd', 'reloadHours'];
   $('gear').onclick = function () {
     for (var i = 0; i < FIELDS.length; i++) $('s_' + FIELDS[i]).value = cfg[FIELDS[i]];
     $('modal').style.display = 'block';
