@@ -173,7 +173,7 @@ body.night #dim{opacity:.78}
 <button id="gear" aria-label="設定"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button>
 
 <div id="modal"><div class="box jp">
-  <h2>設定</h2>
+  <h2>設定 <span class="muted" style="font-size:13px;font-weight:400">ver 2026-10-23c</span></h2>
   <div class="fx row">
     <div><label for="s_clockLabel">時計の見出し</label><input id="s_clockLabel"></div>
     <div><label for="s_accent">アクセント色</label><input id="s_accent" placeholder="#FF9F45"></div>
@@ -392,10 +392,18 @@ body.night #dim{opacity:.78}
   }
   function spSeek(t) { if (sp && spSt.dur) { spSt.pos = Math.max(0, Math.min(spSt.dur - 1, t)); sp.seek(spSt.pos); spUpdate(); } }
 
+  // iPadのSafariで埋め込みが小さく表示されないよう、高さを直接指定する
+  function spFixSize() {
+    var f = $('c-music').getElementsByTagName('iframe')[0];
+    if (!f) return;
+    f.setAttribute('height', '352'); f.setAttribute('width', '100%');
+    f.style.height = '352px'; f.style.width = '100%'; f.style.display = 'block';
+  }
+
   function renderSpotify(uri) {
     var box = $('c-music');
     box.style.padding = '12px';
-    box.innerHTML = '<div id="sp-embed"></div>';
+    box.innerHTML = '<div id="sp-wrap" style="height:352px;overflow:hidden;border-radius:14px"><div id="sp-embed"></div></div>';
     $('m-play').onclick = function () { if (sp) sp.togglePlay(); };
     $('m-restart').onclick = function () { if (sp) sp.restart(); };
     $('m-back').onclick = function () { spSeek(spSt.pos - 15); };
@@ -408,6 +416,7 @@ body.night #dim{opacity:.78}
     window.onSpotifyIframeApiReady = function (API) {
       API.createController($('sp-embed'), { uri: uri, width: '100%', height: 352 }, function (c) {
         sp = c;
+        spFixSize(); setTimeout(spFixSize, 1000); setTimeout(spFixSize, 4000);
         c.addListener('playback_update', function (e) {
           var d = (e && e.data) || {};
           spSt.paused = !!d.isPaused; spSt.pos = (d.position || 0) / 1000; spSt.dur = (d.duration || 0) / 1000;
