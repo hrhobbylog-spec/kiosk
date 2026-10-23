@@ -1,0 +1,9 @@
+{
+  "name": "Kiosk Dashboard",
+  "short_name": "Kiosk",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "landscape",
+  "background_color": "#0b0d12",
+  "theme_color": "#0b0d12"
+}

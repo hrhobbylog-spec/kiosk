@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kiosk">
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600&amp;display=swap">
+<title>Kiosk</title>
+<style>
+html,body{margin:0;padding:0;height:100%;background:#0B0C0F;color:#F2F2F0;overflow:hidden;
+  font-family:'Inter','Hiragino Sans','Hiragino Kaku Gothic ProN',system-ui,sans-serif;
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none;
+  -webkit-tap-highlight-color:rgba(0,0,0,0);-webkit-text-size-adjust:100%}
+.jp{font-family:'Hiragino Sans','Hiragino Kaku Gothic ProN','Inter',sans-serif}
+.in{font-family:'Inter','Hiragino Sans',sans-serif}
+.tab{font-variant-numeric:tabular-nums;-webkit-font-feature-settings:"tnum";font-feature-settings:"tnum"}
+.muted{color:#9A9DA6}
+.fx{display:-webkit-box;display:-webkit-flex;display:flex}
+.col{-webkit-flex-direction:column;flex-direction:column}
+.between{-webkit-justify-content:space-between;justify-content:space-between}
+.center{-webkit-justify-content:center;justify-content:center}
+.aic{-webkit-align-items:center;align-items:center}
+.aie{-webkit-align-items:flex-end;align-items:flex-end}
+.ais{-webkit-align-items:flex-start;align-items:flex-start}
+.aib{-webkit-align-items:baseline;align-items:baseline}
+.grow{-webkit-flex:1;flex:1;min-height:0}
+.ell{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* 1194×834 の固定ステージを画面に合わせて拡大縮小 */
+#stage{position:absolute;left:0;top:0;width:1194px;height:834px;
+  -webkit-transform-origin:0 0;transform-origin:0 0}
+#stage.ready{-webkit-transition:-webkit-transform 3s;transition:transform 3s}
+.card{position:absolute;background:#16181D;border:1px solid #22252C;border-radius:32px;box-sizing:border-box;overflow:hidden;
+  display:-webkit-box;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column}
+#c-clock{left:32px;top:32px;width:747px;height:400px;padding:36px 44px;-webkit-justify-content:space-between;justify-content:space-between}
+#c-weather{left:799px;top:32px;width:363px;height:400px;padding:28px;-webkit-justify-content:space-between;justify-content:space-between}
+#c-cal{left:32px;top:452px;width:363px;height:350px;padding:24px 24px 20px}
+#c-events{left:415.5px;top:452px;width:363px;height:350px;padding:24px}
+#c-music{left:799px;top:452px;width:363px;height:350px;padding:12px}
+
+/* 時計 */
+.cap{font-size:15px;font-weight:500;letter-spacing:.08em}
+#time{font-size:200px;line-height:.85;font-weight:200;letter-spacing:-.04em}
+#sec{font-size:44px;font-weight:300;padding-bottom:6px;margin-left:16px}
+#date{font-size:34px;font-weight:500}
+#weekday{font-size:24px;font-weight:400;margin-left:16px}
+#holiday{font-size:20px;font-weight:500;margin-left:16px}
+
+/* 天気 */
+#wplace{font-size:17px;font-weight:500}
+#wdesc{font-size:14px;margin-top:4px}
+#wtemp{font-size:96px;font-weight:200;line-height:.9;letter-spacing:-.03em}
+.wmeta{font-size:14px;text-align:right;line-height:1.6}
+#hourly{border-top:1px solid #22252C;padding-top:18px}
+#hourly>div{-webkit-flex:1;flex:1;text-align:center}
+#hourly .h{font-size:13px;display:block}
+#hourly svg{display:block;margin:8px auto}
+#hourly .t{font-size:15px}
+
+/* カレンダー */
+.head{font-size:18px;font-weight:500}
+.small{font-size:13px;font-weight:500}
+.wk{margin-top:14px;font-size:12px}
+.wk span,.crow div{width:14.2857%;text-align:center}
+#cal{margin-top:10px}
+.crow div{height:36px;line-height:36px;font-size:15px;color:#D8D9DC}
+.crow .sun{color:#E59A8C}
+.crow .today span{display:inline-block;width:34px;height:34px;line-height:34px;border-radius:50%;color:#0B0C0F;font-weight:600}
+
+/* 予定 */
+#events{margin-top:16px}
+.ev{padding:10px 14px;border-radius:16px;margin-bottom:6px}
+.ev.cur{background:#1D2026}
+.ev .dot{width:8px;height:8px;border-radius:50%;margin-right:14px;-webkit-flex-shrink:0;flex-shrink:0}
+.ev .tt{font-size:15px;font-weight:500;line-height:1.35}
+.ev .tm{font-size:13px;line-height:1.35;margin-top:2px}
+.hint{font-size:14px;line-height:1.7;color:#9A9DA6}
+
+/* ミュージック */
+#c-music iframe{width:100%;height:100%;border:0;border-radius:22px;background:transparent}
+.art{width:112px;height:112px;border-radius:18px;background:#2A2D35;-webkit-flex-shrink:0;flex-shrink:0}
+
+/* 夜間減光・設定 */
+#dim{position:fixed;top:0;left:0;right:0;bottom:0;background:#000;opacity:0;pointer-events:none;-webkit-transition:opacity 2s;transition:opacity 2s;z-index:5}
+body.night #dim{opacity:.78}
+#gear{position:fixed;right:10px;bottom:6px;width:44px;height:44px;border:0;background:transparent;color:#9A9DA6;opacity:.35;z-index:6;padding:0}
+#modal{display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.72);z-index:10;overflow-y:auto;-webkit-overflow-scrolling:touch}
+#modal .box{background:#16181D;border:1px solid #22252C;max-width:640px;margin:30px auto;border-radius:24px;padding:24px 28px}
+#modal h2{margin:0 0 8px;font-weight:500;font-size:20px}
+#modal label{display:block;font-size:13px;color:#9A9DA6;margin:14px 0 6px}
+#modal input{width:100%;box-sizing:border-box;font-size:16px;padding:10px 12px;border-radius:12px;border:1px solid #2A2D35;background:#0B0C0F;color:#F2F2F0;-webkit-user-select:text;user-select:text;-webkit-appearance:none}
+#modal .row>div{-webkit-flex:1;flex:1;margin-right:10px}#modal .row>div:last-child{margin-right:0}
+#modal button{font-size:16px;padding:11px 20px;border-radius:14px;border:0;margin:20px 8px 0 0;background:#2A2D35;color:#F2F2F0}
+#modal button.primary{background:#FF9F45;color:#0B0C0F;font-weight:600}
+</style>
+</head>
+<body>
+<div id="stage">
+  <!-- 時計 -->
+  <section class="card" id="c-clock">
+    <div class="fx between aic muted"><span class="cap" id="clabel">TOKYO</span><span class="cap" id="year" style="letter-spacing:0"></span></div>
+    <div class="fx aie"><span id="time" class="tab">--:--</span><span id="sec" class="tab"></span></div>
+    <div class="fx aib jp"><span id="date"></span><span id="weekday" class="muted"></span><span id="holiday"></span></div>
+  </section>
+
+  <!-- 天気 -->
+  <section class="card jp" id="c-weather">
+    <div class="fx between ais">
+      <div><div id="wplace">天気</div><div id="wdesc" class="muted">読み込み中</div></div>
+      <div id="wicon"></div>
+    </div>
+    <div class="fx between aie">
+      <span id="wtemp" class="in">--°</span>
+      <div class="wmeta muted"><div id="whl"></div><div id="whw"></div></div>
+    </div>
+    <div class="fx" id="hourly"></div>
+  </section>
+
+  <!-- カレンダー -->
+  <section class="card jp" id="c-cal">
+    <div class="fx between aib"><span class="head" id="month"></span><span class="small acc-c">今日</span></div>
+    <div class="fx wk muted"><span>日</span><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span>土</span></div>
+    <div id="cal" class="in grow fx col between"></div>
+  </section>
+
+  <!-- 予定 -->
+  <section class="card jp" id="c-events">
+    <div class="fx between aib"><span class="head">今日の予定</span><span class="small muted" id="evcount" style="font-weight:400"></span></div>
+    <div id="events"></div>
+  </section>
+
+  <!-- ミュージック -->
+  <section class="card jp" id="c-music"></section>
+</div>
+
+<div id="dim"></div>
+<button id="gear" aria-label="設定"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button>
+
+<div id="modal"><div class="box jp">
+  <h2>設定</h2>
+  <div class="fx row">
+    <div><label for="s_clockLabel">時計の見出し</label><input id="s_clockLabel"></div>
+    <div><label for="s_accent">アクセント色</label><input id="s_accent" placeholder="#FF9F45"></div>
+  </div>
+  <div class="fx row">
+    <div><label for="s_place">地名（天気の見出し）</label><input id="s_place"></div>
+    <div><label for="s_lat">緯度</label><input id="s_lat" inputmode="decimal"></div>
+    <div><label for="s_lon">経度</label><input id="s_lon" inputmode="decimal"></div>
+  </div>
+  <button id="s_geo">現在地を使う</button>
+  <label for="s_ics">カレンダー ICS URL（iCloud公開カレンダー / Googleの「iCal形式の非公開アドレス」など。webcal:// も可）</label>
+  <input id="s_ics" placeholder="https://...ics">
+  <label for="s_proxy">CORSプロキシ（例: https://xxx.workers.dev/?url= 。空ならそのまま取得）</label>
+  <input id="s_proxy">
+  <label for="s_music">Apple Music の共有URL（プレイリスト・アルバム・ステーション）</label>
+  <input id="s_music" placeholder="https://music.apple.com/jp/playlist/...">
+  <div class="fx row">
+    <div><label for="s_nightStart">夜間減光 開始(時)</label><input id="s_nightStart" inputmode="numeric"></div>
+    <div><label for="s_nightEnd">夜間減光 終了(時)</label><input id="s_nightEnd" inputmode="numeric"></div>
+    <div><label for="s_reloadHours">自動リロード(時間)</label><input id="s_reloadHours" inputmode="numeric"></div>
+  </div>
+  <button class="primary" id="s_save">保存して再読み込み</button><button id="s_close">閉じる</button>
+</div></div>
+
+<script>
+(function () {
+  'use strict';
+  var W = 1194, H = 834;
+  var DEFAULTS = { clockLabel: 'TOKYO', accent: '#FF9F45', place: '東京都', lat: 35.6812, lon: 139.7671,
+                   ics: '', proxy: '', music: '', nightStart: 23, nightEnd: 6, reloadHours: 6 };
+  var KEY = 'kioskCfg';
+  var WD = ['日', '月', '火', '水', '木', '金', '土'];
+  var DOTS = null; // 予定のドット色（アクセント, 青, 緑 の順）
+  var cfg = loadCfg();
+  var ACC = /^#[0-9a-f]{3,8}$/i.test(cfg.accent) ? cfg.accent : DEFAULTS.accent;
+  var holidays = {}, events = [], lastDay = -1, wakeUntil = 0, jx = 0, jy = 0;
+
+  function $(id) { return document.getElementById(id); }
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function hm(d) { return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+
+  function loadCfg() {
+    var c = {}, s = null, k;
+    try { s = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
+    for (k in DEFAULTS) c[k] = (s && s.hasOwnProperty(k) && s[k] !== '') ? s[k] : DEFAULTS[k];
+    if (s && s.hasOwnProperty('ics')) c.ics = s.ics;
+    if (s && s.hasOwnProperty('proxy')) c.proxy = s.proxy;
+    if (s && s.hasOwnProperty('music')) c.music = s.music;
+    return c;
+  }
+
+  function get(url, cb) {
+    var done = false, x = new XMLHttpRequest();
+    function fin(err, txt) { if (done) return; done = true; cb(err, txt); }
+    try {
+      x.open('GET', url, true);
+      x.timeout = 20000;
+      x.onreadystatechange = function () {
+        if (x.readyState !== 4) return;
+        if (x.status >= 200 && x.status < 300) fin(null, x.responseText);
+        else fin(new Error('HTTP ' + x.status));
+      };
+      x.ontimeout = function () { fin(new Error('timeout')); };
+      x.send();
+    } catch (e) { fin(e); }
+  }
+
+  /* ---------- 画面に合わせて拡大縮小 ---------- */
+  function fit() {
+    var w = window.innerWidth, h = window.innerHeight, s = Math.min(w / W, h / H);
+    var t = 'translate(' + ((w - W * s) / 2 + jx) + 'px,' + ((h - H * s) / 2 + jy) + 'px) scale(' + s + ')';
+    $('stage').style.webkitTransform = t; $('stage').style.transform = t;
+  }
+
+  /* ---------- アイコン（線画SVG） ---------- */
+  var WHITE = '#F2F2F0', GREY = '#9A9DA6', BLUE = '#6FA8FF';
+  function svg(size, sw, body) {
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 24 24" fill="none" stroke-width="' + sw +
+      '" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + body + '</svg>';
+  }
+  var CLOUD = 'M7 18h10a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.6 1.6A3.2 3.2 0 0 0 7 18z';
+  var CLOUD_HI = 'M7 15h10a4 4 0 0 0 0-8 5.5 5.5 0 0 0-10.6 1.6A3.2 3.2 0 0 0 7 15z';
+  function icon(code, day, size) {
+    var sw = size > 30 ? 1.5 : 1.6;
+    if (code <= 1) {
+      if (!day) return svg(size, sw, '<path stroke="' + GREY + '" d="M18 14.5A7 7 0 0 1 9.5 6a7 7 0 1 0 8.5 8.5z"></path>');
+      return svg(size, sw, '<g stroke="' + ACC + '"><circle cx="12" cy="12" r="4"></circle><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"></path></g>');
+    }
+    if (code === 2) {
+      if (!day) return svg(size, sw, '<path stroke="' + GREY + '" d="M14 4.5A5 5 0 0 0 19.5 10"></path><path stroke="' + WHITE + '" d="' + CLOUD + '"></path>');
+      return svg(size, sw, '<g stroke="' + ACC + '"><circle cx="9" cy="9" r="3.5"></circle><path d="M9 2v1.5M9 14.5V16M2 9h1.5M3.9 3.9l1 1M13.1 4.9l1-1M3.9 14.1l1-1"></path></g><path stroke="' + WHITE + '" d="M10.5 20h7a3.5 3.5 0 0 0 0-7 4.5 4.5 0 0 0-8.3 1.8A2.6 2.6 0 0 0 10.5 20z"></path>');
+    }
+    if (code === 3) return svg(size, sw, '<path stroke="' + WHITE + '" d="' + CLOUD + '"></path>');
+    if (code === 45 || code === 48) return svg(size, sw, '<path stroke="' + GREY + '" d="M4 9h16M3 13h18M5 17h14"></path>');
+    if ((code >= 71 && code <= 77) || code === 85 || code === 86)
+      return svg(size, sw, '<path stroke="' + WHITE + '" d="' + CLOUD_HI + '"></path><path stroke="' + BLUE + '" d="M8 19v.01M12 20v.01M16 19v.01M10 22v.01M14 22v.01" stroke-width="2.4"></path>');
+    if (code >= 95) return svg(size, sw, '<path stroke="' + WHITE + '" d="' + CLOUD_HI + '"></path><path stroke="' + ACC + '" d="M12.5 16l-2 3.5h3l-2 3.5"></path>');
+    // 霧雨・雨・にわか雨
+    return svg(size, sw, '<path stroke="' + WHITE + '" d="' + CLOUD_HI + '"></path><path stroke="' + BLUE + '" d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"></path>');
+  }
+  var LABEL = { 0: '快晴', 1: '晴れ', 2: '晴れ時々くもり', 3: 'くもり', 45: '霧', 48: '霧', 51: '霧雨', 53: '霧雨', 55: '強い霧雨',
+    56: '着氷性の霧雨', 57: '着氷性の霧雨', 61: '小雨', 63: '雨', 65: '大雨', 66: '着氷性の雨', 67: '着氷性の雨',
+    71: '小雪', 73: '雪', 75: '大雪', 77: '霧雪', 80: 'にわか雨', 81: 'にわか雨', 82: '激しいにわか雨',
+    85: 'にわか雪', 86: '強いにわか雪', 95: '雷雨', 96: 'ひょうを伴う雷雨', 99: 'ひょうを伴う雷雨' };
+
+  /* ---------- 時計 ---------- */
+  function tick() {
+    var d = new Date();
+    $('time').innerHTML = pad(d.getHours()) + ':' + pad(d.getMinutes());
+    $('sec').innerHTML = pad(d.getSeconds());
+    if (d.getDate() !== lastDay) {
+      lastDay = d.getDate();
+      $('year').innerHTML = d.getFullYear() + '年';
+      $('date').innerHTML = (d.getMonth() + 1) + '月' + d.getDate() + '日';
+      $('weekday').innerHTML = WD[d.getDay()] + '曜日';
+      renderCal(d);
+      renderEvents();
+    }
+    if (d.getSeconds() === 0) renderEvents();
+    night(d);
+    setTimeout(tick, 1000 - d.getMilliseconds() + 5);
+  }
+
+  function night(d) {
+    var h = d.getHours(), s = +cfg.nightStart, e = +cfg.nightEnd;
+    var isNight = s === e ? false : (s < e ? (h >= s && h < e) : (h >= s || h < e));
+    if (Date.now() < wakeUntil) isNight = false;
+    document.body.className = isNight ? 'night' : '';
+  }
+
+  /* ---------- 天気（Open-Meteo, APIキー不要） ---------- */
+  function loadWeather() {
+    var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + cfg.lat + '&longitude=' + cfg.lon +
+      '&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,is_day' +
+      '&hourly=temperature_2m,weather_code,is_day' +
+      '&daily=temperature_2m_max,temperature_2m_min' +
+      '&timezone=auto&forecast_days=2&wind_speed_unit=ms';
+    get(url, function (err, txt) {
+      if (err) { $('wdesc').innerHTML = '天気を取得できません'; return; }
+      var j; try { j = JSON.parse(txt); } catch (e) { return; }
+      var c = j.current, hr = j.hourly, dl = j.daily;
+      $('wplace').innerHTML = esc(cfg.place);
+      $('wdesc').innerHTML = LABEL[c.weather_code] || '—';
+      $('wicon').innerHTML = icon(c.weather_code, c.is_day, 56);
+      $('wtemp').innerHTML = Math.round(c.temperature_2m) + '°';
+      $('whl').innerHTML = '最高 ' + Math.round(dl.temperature_2m_max[0]) + '° / 最低 ' + Math.round(dl.temperature_2m_min[0]) + '°';
+      $('whw').innerHTML = '湿度 ' + c.relative_humidity_2m + '% · 風 ' + Math.round(c.wind_speed_10m) + 'm/s';
+      // 現在の時刻の次から4時間ぶん
+      var now = String(c.time).slice(0, 13), idx = 0;
+      for (var i = 0; i < hr.time.length; i++) if (hr.time[i].slice(0, 13) === now) { idx = i; break; }
+      var h = '<div><span class="h muted">今</span>' + icon(c.weather_code, c.is_day, 24) +
+        '<span class="t in">' + Math.round(c.temperature_2m) + '°</span></div>';
+      for (var k = idx + 1; k <= idx + 4 && k < hr.time.length; k++) {
+        h += '<div><span class="h muted">' + (+hr.time[k].slice(11, 13)) + '時</span>' + icon(hr.weather_code[k], hr.is_day[k], 24) +
+          '<span class="t in">' + Math.round(hr.temperature_2m[k]) + '°</span></div>';
+      }
+      $('hourly').innerHTML = h;
+    });
+  }
+
+  /* ---------- 祝日（holidays-jp） ---------- */
+  function loadHolidays() {
+    get('https://holidays-jp.github.io/api/v1/date.json', function (err, txt) {
+      if (err) return;
+      try { holidays = JSON.parse(txt); } catch (e) { return; }
+      renderCal(new Date());
+    });
+  }
+
+  /* ---------- 月カレンダー ---------- */
+  function renderCal(now) {
+    var y = now.getFullYear(), m = now.getMonth(), d = now.getDate();
+    $('month').innerHTML = y + '年' + (m + 1) + '月';
+    var first = new Date(y, m, 1).getDay(), days = new Date(y, m + 1, 0).getDate();
+    var total = Math.ceil((first + days) / 7) * 7, h = '';
+    for (var i = 0; i < total; i++) {
+      if (i % 7 === 0) h += '<div class="fx crow">';
+      var n = i - first + 1, inM = n >= 1 && n <= days, cls = '';
+      if (inM) {
+        var key = y + '-' + pad(m + 1) + '-' + pad(n);
+        if (i % 7 === 0 || holidays[key]) cls = 'sun';
+        if (n === d) cls = 'today';
+      }
+      h += '<div class="' + cls + '">' + (inM ? (n === d ? '<span style="background:' + ACC + '">' + n + '</span>' : n) : '') + '</div>';
+      if (i % 7 === 6) h += '</div>';
+    }
+    $('cal').innerHTML = h;
+    var hol = holidays[ymd(now)];
+    $('holiday').innerHTML = hol ? esc(hol) : '';
+  }
+
+  /* ---------- 予定（ICS） ---------- */
+  function unesc(v) { return v.replace(/\\n/gi, ' ').replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\\\/g, '\\'); }
+  function parseDT(v) {
+    var y = +v.substr(0, 4), mo = +v.substr(4, 2) - 1, d = +v.substr(6, 2);
+    if (v.length === 8) return new Date(y, mo, d);
+    var h = +v.substr(9, 2), mi = +v.substr(11, 2), s = +v.substr(13, 2) || 0;
+    if (v.charAt(v.length - 1) === 'Z') return new Date(Date.UTC(y, mo, d, h, mi, s));
+    return new Date(y, mo, d, h, mi, s); // TZID付きは端末のタイムゾーンとみなす
+  }
+  function parseICS(t) {
+    var lines = t.replace(/\r?\n[ \t]/g, '').split(/\r?\n/), out = [], cur = null;
+    for (var i = 0; i < lines.length; i++) {
+      var l = lines[i];
+      if (l === 'BEGIN:VEVENT') { cur = {}; continue; }
+      if (l === 'END:VEVENT') { if (cur && cur.start) out.push(cur); cur = null; continue; }
+      if (!cur) continue;
+      var idx = l.indexOf(':'); if (idx < 0) continue;
+      var name = l.slice(0, idx).split(';')[0], val = l.slice(idx + 1);
+      if (name === 'SUMMARY') cur.title = unesc(val);
+      else if (name === 'DTSTART') { cur.start = parseDT(val); cur.allDay = val.length === 8; }
+      else if (name === 'DTEND') cur.end = parseDT(val);
+      else if (name === 'RRULE') cur.rrule = val;
+      else if (name === 'STATUS' && val === 'CANCELLED') cur.cancel = true;
+    }
+    return out;
+  }
+  // 簡易RRULE展開（DAILY/WEEKLY/MONTHLY/YEARLY + INTERVAL/COUNT/UNTIL/BYDAY(週次)）
+  function expand(ev, from, to) {
+    var dur = ev.end ? ev.end - ev.start : (ev.allDay ? 864e5 : 36e5);
+    if (!ev.rrule) return [{ title: ev.title, start: ev.start, end: new Date(+ev.start + dur), allDay: ev.allDay }];
+    var r = {}, parts = ev.rrule.split(';');
+    for (var i = 0; i < parts.length; i++) { var kv = parts[i].split('='); r[kv[0]] = kv[1]; }
+    var iv = +(r.INTERVAL || 1), count = r.COUNT ? +r.COUNT : 1e9, until = r.UNTIL ? parseDT(r.UNTIL) : null;
+    var BD = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6 }, days = null;
+    if (r.FREQ === 'WEEKLY' && r.BYDAY) { days = {}; r.BYDAY.split(',').forEach(function (x) { days[BD[x.slice(-2)]] = 1; }); }
+    var res = [], n = 0, s = ev.start, guard = 0;
+    while (guard++ < 5000 && n < count) {
+      var cands = [];
+      if (days) {
+        var ws = new Date(s.getFullYear(), s.getMonth(), s.getDate() - s.getDay(), s.getHours(), s.getMinutes());
+        for (var k = 0; k < 7; k++) if (days[k]) cands.push(new Date(ws.getFullYear(), ws.getMonth(), ws.getDate() + k, s.getHours(), s.getMinutes()));
+      } else cands.push(s);
+      for (var c = 0; c < cands.length && n < count; c++) {
+        var o = cands[c];
+        if (o < ev.start) continue;
+        if (until && o > until) return res;
+        if (o > to) return res;
+        n++;
+        if (+o + dur >= +from) res.push({ title: ev.title, start: o, end: new Date(+o + dur), allDay: ev.allDay });
+      }
+      if (r.FREQ === 'DAILY') s = new Date(s.getFullYear(), s.getMonth(), s.getDate() + iv, s.getHours(), s.getMinutes());
+      else if (r.FREQ === 'WEEKLY') s = new Date(s.getFullYear(), s.getMonth(), s.getDate() + 7 * iv, s.getHours(), s.getMinutes());
+      else if (r.FREQ === 'MONTHLY') s = new Date(s.getFullYear(), s.getMonth() + iv, s.getDate(), s.getHours(), s.getMinutes());
+      else if (r.FREQ === 'YEARLY') s = new Date(s.getFullYear() + iv, s.getMonth(), s.getDate(), s.getHours(), s.getMinutes());
+      else break;
+    }
+    return res;
+  }
+
+  function loadEvents() {
+    if (!cfg.ics) { renderEvents(); return; }
+    var u = String(cfg.ics).replace(/^webcal:\/\//i, 'https://');
+    if (cfg.proxy) u = cfg.proxy.indexOf('{url}') >= 0 ? cfg.proxy.replace('{url}', encodeURIComponent(u)) : cfg.proxy + encodeURIComponent(u);
+    get(u, function (err, txt) {
+      if (err) { $('events').innerHTML = '<div class="hint">カレンダーを取得できません（' + esc(err.message) + '）。CORSプロキシを設定してください。</div>'; $('evcount').innerHTML = ''; return; }
+      var now = new Date(), from = new Date(now.getFullYear(), now.getMonth(), now.getDate()), to = new Date(+from + 8 * 864e5);
+      var raw = parseICS(txt), list = [];
+      for (var i = 0; i < raw.length; i++) if (!raw[i].cancel) list = list.concat(expand(raw[i], from, to));
+      list.sort(function (a, b) { return (b.allDay ? 1 : 0) - (a.allDay ? 1 : 0) || a.start - b.start; });
+      events = list;
+      renderEvents();
+    });
+  }
+
+  function evRow(e, cur, color, when) {
+    return '<div class="ev fx aic' + (cur ? ' cur' : '') + '"><span class="dot" style="background:' + color + '"></span>' +
+      '<div style="min-width:0"><div class="tt ell">' + esc(e.title || '(無題)') + '</div>' +
+      '<div class="tm muted in">' + when + '</div></div></div>';
+  }
+
+  function renderEvents() {
+    var box = $('events');
+    if (!cfg.ics) { $('evcount').innerHTML = ''; box.innerHTML = '<div class="hint">右下の歯車から、カレンダーのICS URLを登録すると今日の予定が表示されます。</div>'; return; }
+    DOTS = [ACC, BLUE, '#7ED6A8'];
+    var now = new Date(), endToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    var today = [], next = null;
+    for (var i = 0; i < events.length; i++) {
+      var e = events[i];
+      if (e.end <= now) continue;
+      if (e.start < endToday) today.push(e);
+      else if (!next || e.start < next.start) next = e;
+    }
+    today.sort(function (a, b) { return (b.allDay ? 1 : 0) - (a.allDay ? 1 : 0) || a.start - b.start; });
+    $('evcount').innerHTML = today.length ? today.length + '件' : '';
+    var h = '', curDone = false;
+    for (var k = 0; k < today.length && k < 4; k++) {
+      var t = today[k], cur = false;
+      if (!curDone && !t.allDay) { cur = true; curDone = true; }
+      h += evRow(t, cur, cur ? ACC : DOTS[1 + (k % 2)], t.allDay ? '終日' : hm(t.start) + ' – ' + hm(t.end));
+    }
+    if (!today.length) {
+      h = '<div class="hint" style="margin-bottom:12px">今日の予定はありません</div>';
+      if (next) {
+        var tmr = ymd(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)) === ymd(next.start);
+        var day = tmr ? '明日' : (next.start.getMonth() + 1) + '/' + next.start.getDate() + '（' + WD[next.start.getDay()] + '）';
+        h += evRow(next, true, BLUE, day + ' ' + (next.allDay ? '終日' : hm(next.start)));
+      }
+    }
+    box.innerHTML = h;
+  }
+
+  /* ---------- Apple Music ---------- */
+  function renderMusic() {
+    var box = $('c-music');
+    if (!cfg.music) {
+      box.style.padding = '24px';
+      box.innerHTML = '<div class="fx aic"><div class="art fx aic center">' +
+        svg(40, 1.5, '<g stroke="' + GREY + '"><path d="M9 18V5l11-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="17" cy="16" r="3"></circle></g>') +
+        '</div><div style="margin-left:16px;min-width:0"><div class="small" style="letter-spacing:.06em;color:' + ACC + '">APPLE MUSIC</div>' +
+        '<div style="font-size:19px;font-weight:500;margin-top:6px">未設定</div></div></div>' +
+        '<div class="hint" style="margin-top:24px">右下の歯車から、Apple Music のプレイリストやアルバムの共有URLを登録すると、ここにプレーヤーが表示されます。</div>';
+      return;
+    }
+    var u = String(cfg.music).replace('://music.apple.com', '://embed.music.apple.com');
+    u += (u.indexOf('?') < 0 ? '?' : '&') + 'theme=dark';
+    box.innerHTML = '<iframe title="Apple Music" allow="autoplay *; encrypted-media *; fullscreen *" ' +
+      'sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" src="' + esc(u) + '"></iframe>';
+  }
+
+  /* ---------- 設定画面 ---------- */
+  var FIELDS = ['clockLabel', 'accent', 'place', 'lat', 'lon', 'ics', 'proxy', 'music', 'nightStart', 'nightEnd', 'reloadHours'];
+  $('gear').onclick = function () {
+    for (var i = 0; i < FIELDS.length; i++) $('s_' + FIELDS[i]).value = cfg[FIELDS[i]];
+    $('modal').style.display = 'block';
+  };
+  $('s_close').onclick = function () { $('modal').style.display = 'none'; };
+  $('s_save').onclick = function () {
+    var c = {};
+    for (var i = 0; i < FIELDS.length; i++) c[FIELDS[i]] = $('s_' + FIELDS[i]).value.replace(/^\s+|\s+$/g, '');
+    try { localStorage.setItem(KEY, JSON.stringify(c)); } catch (e) { alert('保存できませんでした'); }
+    location.reload();
+  };
+  $('s_geo').onclick = function () {
+    if (!navigator.geolocation) return alert('位置情報が使えません');
+    navigator.geolocation.getCurrentPosition(function (p) {
+      $('s_lat').value = p.coords.latitude.toFixed(4); $('s_lon').value = p.coords.longitude.toFixed(4);
+    }, function () { alert('位置情報を取得できませんでした（HTTPSが必要です）'); });
+  };
+
+  // 夜間はタップで1分間だけ明るく
+  document.addEventListener('touchstart', function () { if (document.body.className === 'night') { wakeUntil = Date.now() + 60000; night(new Date()); } }, false);
+  // 画面のバウンス・スクロール防止（設定画面は除く）
+  document.addEventListener('touchmove', function (e) {
+    var n = e.target; while (n) { if (n.id === 'modal') return; n = n.parentNode; }
+    e.preventDefault();
+  }, { passive: false });
+
+  /* ---------- 起動 ---------- */
+  $('clabel').innerHTML = esc(cfg.clockLabel);
+  var accEls = document.querySelectorAll('.acc-c');
+  for (var a = 0; a < accEls.length; a++) accEls[a].style.color = ACC;
+  $('sec').style.color = ACC;
+  $('holiday').style.color = ACC;
+
+  fit();
+  setTimeout(function () { $('stage').className = 'ready'; }, 50);
+  window.addEventListener('resize', fit, false);
+  window.addEventListener('orientationchange', function () { setTimeout(fit, 300); }, false);
+
+  tick();
+  loadWeather(); setInterval(loadWeather, 15 * 60e3);
+  loadHolidays(); setInterval(loadHolidays, 24 * 3600e3);
+  loadEvents(); setInterval(loadEvents, 10 * 60e3);
+  renderMusic();
+  // 焼き付き防止：3分ごとに数pxずらす
+  setInterval(function () { jx = Math.round(Math.random() * 8 - 4); jy = Math.round(Math.random() * 8 - 4); fit(); }, 3 * 60e3);
+  var rh = +cfg.reloadHours;
+  if (rh > 0) setTimeout(function () { location.reload(); }, rh * 3600e3);
+})();
+</script>
+</body>
+</html>
