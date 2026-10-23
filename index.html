@@ -82,7 +82,14 @@ html,body{margin:0;padding:0;height:100%;background:#0B0C0F;color:#F2F2F0;overfl
 
 /* ミュージック */
 #c-music iframe{width:100%;height:100%;border:0;border-radius:22px;background:transparent}
-.art{width:112px;height:112px;border-radius:18px;background:#2A2D35;-webkit-flex-shrink:0;flex-shrink:0}
+.art{width:112px;height:112px;border-radius:18px;background:#2A2D35;-webkit-flex-shrink:0;flex-shrink:0;overflow:hidden}
+.art img{width:112px;height:112px;display:block;object-fit:cover}
+.bar{height:4px;border-radius:2px;background:#2A2D35;overflow:hidden}
+#m-fill{height:4px;width:0;background:#F2F2F0}
+.mb{width:52px;height:52px;border:0;border-radius:50%;background:transparent;color:#F2F2F0;padding:0;margin:0 14px;cursor:pointer}
+.mb svg{display:block;margin:0 auto}
+.mb.play{width:64px;height:64px;background:#F2F2F0;color:#0B0C0F}
+.mb:active{opacity:.6}
 
 /* 夜間減光・設定 */
 #dim{position:fixed;top:0;left:0;right:0;bottom:0;background:#000;opacity:0;pointer-events:none;-webkit-transition:opacity 2s;transition:opacity 2s;z-index:5}
@@ -158,6 +165,8 @@ body.night #dim{opacity:.78}
   <input id="s_proxy">
   <label for="s_music">Apple Music の共有URL（プレイリスト・アルバム・ステーション）</label>
   <input id="s_music" placeholder="https://music.apple.com/jp/playlist/...">
+  <label for="s_mkToken">MusicKit トークンURL（例: https://xxx.workers.dev/musickit-token）または開発者トークン。空なら埋め込みプレーヤー</label>
+  <input id="s_mkToken">
   <div class="fx row">
     <div><label for="s_nightStart">夜間減光 開始(時)</label><input id="s_nightStart" inputmode="numeric"></div>
     <div><label for="s_nightEnd">夜間減光 終了(時)</label><input id="s_nightEnd" inputmode="numeric"></div>
@@ -171,7 +180,7 @@ body.night #dim{opacity:.78}
   'use strict';
   var W = 1194, H = 834;
   var DEFAULTS = { clockLabel: 'TOKYO', accent: '#FF9F45', place: '東京都', lat: 35.6812, lon: 139.7671,
-                   ics: '', proxy: '', music: '', nightStart: 23, nightEnd: 6, reloadHours: 6 };
+                   ics: '', proxy: '', music: '', mkToken: '', nightStart: 23, nightEnd: 6, reloadHours: 6 };
   var KEY = 'kioskCfg';
   var WD = ['日', '月', '火', '水', '木', '金', '土'];
   var DOTS = null; // 予定のドット色（アクセント, 青, 緑 の順）
@@ -192,6 +201,7 @@ body.night #dim{opacity:.78}
     if (s && s.hasOwnProperty('ics')) c.ics = s.ics;
     if (s && s.hasOwnProperty('proxy')) c.proxy = s.proxy;
     if (s && s.hasOwnProperty('music')) c.music = s.music;
+    if (s && s.hasOwnProperty('mkToken')) c.mkToken = s.mkToken;
     return c;
   }
 
@@ -447,8 +457,119 @@ body.night #dim{opacity:.78}
   }
 
   /* ---------- Apple Music ---------- */
+  var NOTE = svg(40, 1.5, '<g stroke="' + GREY + '"><path d="M9 18V5l11-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="17" cy="16" r="3"></circle></g>');
+  var I_PLAY = '<svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4l13 8-13 8z"></path></svg>';
+  var I_PAUSE = '<svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16" rx="1"></rect><rect x="14" y="4" width="4" height="16" rx="1"></rect></svg>';
+  var I_PREV = '<svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11 12l9-6v12zM2 12l9-6v12z"></path></svg>';
+  var I_NEXT = '<svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M13 12L4 6v12zM22 12l-9-6v12z"></path></svg>';
+  var mk = null, mkDesc = null, mkQueued = false, mkArt = '';
+
+  // 共有URL → { type: playlist|album|station, id }
+  function parseMusicUrl(u) {
+    var m = /music\.apple\.com\/[a-z]{2}\/(playlist|album|station)\/[^\/]*\/([^\/?#]+)/i.exec(u || '');
+    return m ? { type: m[1].toLowerCase(), id: m[2] } : null;
+  }
+  function mmss(t) { t = Math.max(0, Math.floor(t || 0)); return Math.floor(t / 60) + ':' + pad(t % 60); }
+
+  function renderPlayer() {
+    var box = $('c-music');
+    box.style.padding = '24px';
+    box.style.webkitJustifyContent = box.style.justifyContent = 'space-between';
+    box.innerHTML =
+      '<div class="fx aic"><div class="art fx aic center" id="m-art">' + NOTE + '</div>' +
+      '<div style="margin-left:16px;min-width:0;-webkit-flex:1;flex:1"><div class="small" id="m-state" style="letter-spacing:.06em;color:' + ACC + '">APPLE MUSIC</div>' +
+      '<div class="ell" id="m-title" style="font-size:19px;font-weight:500;margin-top:6px">読み込み中</div>' +
+      '<div class="ell muted" id="m-artist" style="font-size:14px;margin-top:6px"></div></div></div>' +
+      '<div><div class="bar"><div id="m-fill"></div></div>' +
+      '<div class="fx between muted in tab" style="font-size:12px;margin-top:8px"><span id="m-cur">0:00</span><span id="m-rem">-0:00</span></div></div>' +
+      '<div class="fx aic center"><button class="mb" id="m-prev" aria-label="前の曲">' + I_PREV + '</button>' +
+      '<button class="mb play" id="m-play" aria-label="再生">' + I_PLAY + '</button>' +
+      '<button class="mb" id="m-next" aria-label="次の曲">' + I_NEXT + '</button></div>';
+  }
+  function mkMsg(title, sub) { $('m-title').innerHTML = esc(title); $('m-artist').innerHTML = esc(sub || ''); }
+  function mkFail(msg) {
+    if (mk) return;
+    if (cfg.music) { cfg.mkToken = ''; renderMusic(); } // 埋め込みプレーヤーに切り替え
+    else mkMsg(msg, '');
+  }
+
+  function mkUpdate() {
+    if (!mk) return;
+    var playing = !!mk.isPlaying, it = mk.nowPlayingItem;
+    $('m-play').innerHTML = playing ? I_PAUSE : I_PLAY;
+    $('m-play').setAttribute('aria-label', playing ? '一時停止' : '再生');
+    $('m-state').innerHTML = !mk.isAuthorized ? 'APPLE MUSIC' : (playing ? '再生中' : '一時停止');
+    if (it) {
+      var a = it.attributes || {};
+      mkMsg(it.title || a.name || '', it.artistName || a.artistName || '');
+      var art = it.artwork || a.artwork, url = '';
+      try { if (art) url = MusicKit.formatArtworkURL(art, 224, 224); } catch (e) {}
+      if (url && url !== mkArt) { mkArt = url; $('m-art').innerHTML = '<img alt="" src="' + esc(url) + '">'; }
+    }
+    mkTime();
+  }
+  function mkTime() {
+    if (!mk) return;
+    var cur = mk.currentPlaybackTime || 0, dur = mk.currentPlaybackDuration || 0;
+    $('m-fill').style.width = (dur ? Math.min(100, cur / dur * 100) : 0) + '%';
+    $('m-cur').innerHTML = mmss(cur);
+    $('m-rem').innerHTML = '-' + mmss(dur - cur);
+  }
+  function mkQueue() {
+    if (mkQueued) return Promise.resolve();
+    var o = { startPlaying: false }; o[mkDesc.type] = mkDesc.id;
+    return mk.setQueue(o).then(function () { mkQueued = true; mkUpdate(); });
+  }
+  // サインイン → キュー設定 → 操作
+  function mkDo(fn) {
+    if (!mk) return;
+    var p = mk.isAuthorized ? Promise.resolve() : mk.authorize();
+    p.then(mkQueue).then(fn).then(mkUpdate)['catch'](function () { mkMsg('操作できませんでした', 'もう一度タップしてください'); });
+  }
+  function mkSetup(inst) {
+    mk = inst;
+    ['playbackStateDidChange', 'nowPlayingItemDidChange', 'authorizationStatusDidChange'].forEach(function (n) { mk.addEventListener(n, mkUpdate); });
+    mk.addEventListener('playbackTimeDidChange', mkTime);
+    $('m-play').onclick = function () { mkDo(function () { return mk.isPlaying ? mk.pause() : mk.play(); }); };
+    $('m-next').onclick = function () { mkDo(function () { return mk.skipToNextItem(); }); };
+    $('m-prev').onclick = function () { mkDo(function () { return mk.currentPlaybackTime > 3 ? mk.seekToTime(0) : mk.skipToPreviousItem(); }); };
+    if (mk.isAuthorized) mkQueue().then(mkUpdate)['catch'](function () { mkMsg('プレイリストを読み込めません', ''); });
+    else mkMsg('サインインが必要です', '再生ボタンを押すとサインイン画面が開きます');
+    mkUpdate();
+  }
+  function mkStart(token) {
+    var done = false;
+    function loaded() {
+      if (done || !window.MusicKit) return; done = true;
+      try {
+        var r = MusicKit.configure({ developerToken: token, app: { name: 'Kiosk', build: '1.0' } });
+        if (r && r.then) r.then(function (i) { mkSetup(i || MusicKit.getInstance()); }, function () { mkFail('MusicKitを初期化できません（トークンを確認）'); });
+        else mkSetup(MusicKit.getInstance());
+      } catch (e) { mkFail('MusicKitを初期化できません'); }
+    }
+    document.addEventListener('musickitloaded', loaded, false);
+    var s = document.createElement('script');
+    s.src = 'https://js-cdn.music.apple.com/musickit/v3/musickit.js';
+    s.async = true;
+    s.onerror = function () { mkFail('MusicKitを読み込めません'); };
+    document.head.appendChild(s);
+    setTimeout(loaded, 4000);
+    setTimeout(function () { if (!done) mkFail('この端末ではMusicKitが動きません'); }, 20000);
+  }
+  function renderMusicKit() {
+    renderPlayer();
+    var t = String(cfg.mkToken);
+    if (!/^https?:\/\//i.test(t)) { mkStart(t); return; }
+    get(t, function (err, txt) {
+      if (err || !txt) { mkFail('トークンを取得できません'); return; }
+      mkStart(txt.replace(/^\s+|\s+$/g, ''));
+    });
+  }
+
   function renderMusic() {
     var box = $('c-music');
+    mkDesc = parseMusicUrl(cfg.music);
+    if (cfg.mkToken && mkDesc) { renderMusicKit(); return; }
     if (!cfg.music) {
       box.style.padding = '24px';
       box.innerHTML = '<div class="fx aic"><div class="art fx aic center">' +
@@ -458,6 +579,7 @@ body.night #dim{opacity:.78}
         '<div class="hint" style="margin-top:24px">右下の歯車から、Apple Music のプレイリストやアルバムの共有URLを登録すると、ここにプレーヤーが表示されます。</div>';
       return;
     }
+    box.style.padding = '12px';
     var u = String(cfg.music).replace('://music.apple.com', '://embed.music.apple.com');
     u += (u.indexOf('?') < 0 ? '?' : '&') + 'theme=dark';
     box.innerHTML = '<iframe title="Apple Music" allow="autoplay *; encrypted-media *; fullscreen *" ' +
@@ -465,7 +587,7 @@ body.night #dim{opacity:.78}
   }
 
   /* ---------- 設定画面 ---------- */
-  var FIELDS = ['clockLabel', 'accent', 'place', 'lat', 'lon', 'ics', 'proxy', 'music', 'nightStart', 'nightEnd', 'reloadHours'];
+  var FIELDS = ['clockLabel', 'accent', 'place', 'lat', 'lon', 'ics', 'proxy', 'music', 'mkToken', 'nightStart', 'nightEnd', 'reloadHours'];
   $('gear').onclick = function () {
     for (var i = 0; i < FIELDS.length; i++) $('s_' + FIELDS[i]).value = cfg[FIELDS[i]];
     $('modal').style.display = 'block';
