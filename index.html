@@ -37,10 +37,9 @@ html,body{margin:0;padding:0;height:100%;background:#0B0C0F;color:#F2F2F0;overfl
 .card{position:absolute;background:#16181D;border:1px solid #22252C;border-radius:32px;box-sizing:border-box;overflow:hidden;
   display:-webkit-box;display:-webkit-flex;display:flex;-webkit-flex-direction:column;flex-direction:column}
 #c-clock{left:32px;top:32px;width:747px;height:400px;padding:36px 44px;-webkit-justify-content:space-between;justify-content:space-between}
-#c-weather{left:799px;top:32px;width:363px;height:400px;padding:28px;-webkit-justify-content:space-between;justify-content:space-between}
+#c-weather{left:415.5px;top:452px;width:363px;height:350px;padding:28px;-webkit-justify-content:space-between;justify-content:space-between}
 #c-cal{left:32px;top:452px;width:363px;height:350px;padding:24px 24px 20px}
-#c-events{left:415.5px;top:452px;width:363px;height:350px;padding:24px}
-#c-music{left:799px;top:452px;width:363px;height:350px;padding:12px}
+#c-music{left:799px;top:32px;width:363px;height:770px;padding:12px}
 
 /* 時計 */
 .cap{font-size:15px;font-weight:500;letter-spacing:.08em}
@@ -71,13 +70,6 @@ html,body{margin:0;padding:0;height:100%;background:#0B0C0F;color:#F2F2F0;overfl
 .crow .sun{color:#E59A8C}
 .crow .today span{display:inline-block;width:34px;height:34px;line-height:34px;border-radius:50%;color:#0B0C0F;font-weight:600}
 
-/* 予定 */
-#events{margin-top:16px}
-.ev{padding:10px 14px;border-radius:16px;margin-bottom:6px}
-.ev.cur{background:#1D2026}
-.ev .dot{width:8px;height:8px;border-radius:50%;margin-right:14px;-webkit-flex-shrink:0;flex-shrink:0}
-.ev .tt{font-size:15px;font-weight:500;line-height:1.35}
-.ev .tm{font-size:13px;line-height:1.35;margin-top:2px}
 .hint{font-size:14px;line-height:1.7;color:#9A9DA6}
 
 /* ミュージック */
@@ -134,12 +126,6 @@ body.night #dim{opacity:.78}
     <div id="cal" class="in grow fx col between"></div>
   </section>
 
-  <!-- 予定 -->
-  <section class="card jp" id="c-events">
-    <div class="fx between aib"><span class="head">今日の予定</span><span class="small muted" id="evcount" style="font-weight:400"></span></div>
-    <div id="events"></div>
-  </section>
-
   <!-- ミュージック -->
   <section class="card jp" id="c-music"></section>
 </div>
@@ -159,10 +145,6 @@ body.night #dim{opacity:.78}
     <div><label for="s_lon">経度</label><input id="s_lon" inputmode="decimal"></div>
   </div>
   <button id="s_geo">現在地を使う</button>
-  <label for="s_ics">カレンダー ICS URL（iCloud公開カレンダー / Googleの「iCal形式の非公開アドレス」など。webcal:// も可）</label>
-  <input id="s_ics" placeholder="https://...ics">
-  <label for="s_proxy">CORSプロキシ（例: https://xxx.workers.dev/?url= 。空ならそのまま取得）</label>
-  <input id="s_proxy">
   <label for="s_music">Apple Music の共有URL（プレイリスト・アルバム・ステーション）</label>
   <input id="s_music" placeholder="https://music.apple.com/jp/playlist/...">
   <label for="s_mkToken">MusicKit トークンURL（例: https://xxx.workers.dev/musickit-token）または開発者トークン。空なら埋め込みプレーヤー</label>
@@ -180,13 +162,12 @@ body.night #dim{opacity:.78}
   'use strict';
   var W = 1194, H = 834;
   var DEFAULTS = { clockLabel: 'TOKYO', accent: '#FF9F45', place: '東京都', lat: 35.6812, lon: 139.7671,
-                   ics: '', proxy: '', music: '', mkToken: '', nightStart: 23, nightEnd: 6, reloadHours: 6 };
+                   music: '', mkToken: '', nightStart: 23, nightEnd: 6, reloadHours: 6 };
   var KEY = 'kioskCfg';
   var WD = ['日', '月', '火', '水', '木', '金', '土'];
-  var DOTS = null; // 予定のドット色（アクセント, 青, 緑 の順）
   var cfg = loadCfg();
   var ACC = /^#[0-9a-f]{3,8}$/i.test(cfg.accent) ? cfg.accent : DEFAULTS.accent;
-  var holidays = {}, events = [], lastDay = -1, wakeUntil = 0, jx = 0, jy = 0;
+  var holidays = {}, lastDay = -1, wakeUntil = 0, jx = 0, jy = 0;
 
   function $(id) { return document.getElementById(id); }
   function pad(n) { return n < 10 ? '0' + n : '' + n; }
@@ -198,8 +179,6 @@ body.night #dim{opacity:.78}
     var c = {}, s = null, k;
     try { s = JSON.parse(localStorage.getItem(KEY)); } catch (e) {}
     for (k in DEFAULTS) c[k] = (s && s.hasOwnProperty(k) && s[k] !== '') ? s[k] : DEFAULTS[k];
-    if (s && s.hasOwnProperty('ics')) c.ics = s.ics;
-    if (s && s.hasOwnProperty('proxy')) c.proxy = s.proxy;
     if (s && s.hasOwnProperty('music')) c.music = s.music;
     if (s && s.hasOwnProperty('mkToken')) c.mkToken = s.mkToken;
     return c;
@@ -270,9 +249,7 @@ body.night #dim{opacity:.78}
       $('date').innerHTML = (d.getMonth() + 1) + '月' + d.getDate() + '日';
       $('weekday').innerHTML = WD[d.getDay()] + '曜日';
       renderCal(d);
-      renderEvents();
     }
-    if (d.getSeconds() === 0) renderEvents();
     night(d);
     setTimeout(tick, 1000 - d.getMilliseconds() + 5);
   }
@@ -343,117 +320,6 @@ body.night #dim{opacity:.78}
     $('cal').innerHTML = h;
     var hol = holidays[ymd(now)];
     $('holiday').innerHTML = hol ? esc(hol) : '';
-  }
-
-  /* ---------- 予定（ICS） ---------- */
-  function unesc(v) { return v.replace(/\\n/gi, ' ').replace(/\\,/g, ',').replace(/\\;/g, ';').replace(/\\\\/g, '\\'); }
-  function parseDT(v) {
-    var y = +v.substr(0, 4), mo = +v.substr(4, 2) - 1, d = +v.substr(6, 2);
-    if (v.length === 8) return new Date(y, mo, d);
-    var h = +v.substr(9, 2), mi = +v.substr(11, 2), s = +v.substr(13, 2) || 0;
-    if (v.charAt(v.length - 1) === 'Z') return new Date(Date.UTC(y, mo, d, h, mi, s));
-    return new Date(y, mo, d, h, mi, s); // TZID付きは端末のタイムゾーンとみなす
-  }
-  function parseICS(t) {
-    var lines = t.replace(/\r?\n[ \t]/g, '').split(/\r?\n/), out = [], cur = null;
-    for (var i = 0; i < lines.length; i++) {
-      var l = lines[i];
-      if (l === 'BEGIN:VEVENT') { cur = {}; continue; }
-      if (l === 'END:VEVENT') { if (cur && cur.start) out.push(cur); cur = null; continue; }
-      if (!cur) continue;
-      var idx = l.indexOf(':'); if (idx < 0) continue;
-      var name = l.slice(0, idx).split(';')[0], val = l.slice(idx + 1);
-      if (name === 'SUMMARY') cur.title = unesc(val);
-      else if (name === 'DTSTART') { cur.start = parseDT(val); cur.allDay = val.length === 8; }
-      else if (name === 'DTEND') cur.end = parseDT(val);
-      else if (name === 'RRULE') cur.rrule = val;
-      else if (name === 'STATUS' && val === 'CANCELLED') cur.cancel = true;
-    }
-    return out;
-  }
-  // 簡易RRULE展開（DAILY/WEEKLY/MONTHLY/YEARLY + INTERVAL/COUNT/UNTIL/BYDAY(週次)）
-  function expand(ev, from, to) {
-    var dur = ev.end ? ev.end - ev.start : (ev.allDay ? 864e5 : 36e5);
-    if (!ev.rrule) return [{ title: ev.title, start: ev.start, end: new Date(+ev.start + dur), allDay: ev.allDay }];
-    var r = {}, parts = ev.rrule.split(';');
-    for (var i = 0; i < parts.length; i++) { var kv = parts[i].split('='); r[kv[0]] = kv[1]; }
-    var iv = +(r.INTERVAL || 1), count = r.COUNT ? +r.COUNT : 1e9, until = r.UNTIL ? parseDT(r.UNTIL) : null;
-    var BD = { SU: 0, MO: 1, TU: 2, WE: 3, TH: 4, FR: 5, SA: 6 }, days = null;
-    if (r.FREQ === 'WEEKLY' && r.BYDAY) { days = {}; r.BYDAY.split(',').forEach(function (x) { days[BD[x.slice(-2)]] = 1; }); }
-    var res = [], n = 0, s = ev.start, guard = 0;
-    while (guard++ < 5000 && n < count) {
-      var cands = [];
-      if (days) {
-        var ws = new Date(s.getFullYear(), s.getMonth(), s.getDate() - s.getDay(), s.getHours(), s.getMinutes());
-        for (var k = 0; k < 7; k++) if (days[k]) cands.push(new Date(ws.getFullYear(), ws.getMonth(), ws.getDate() + k, s.getHours(), s.getMinutes()));
-      } else cands.push(s);
-      for (var c = 0; c < cands.length && n < count; c++) {
-        var o = cands[c];
-        if (o < ev.start) continue;
-        if (until && o > until) return res;
-        if (o > to) return res;
-        n++;
-        if (+o + dur >= +from) res.push({ title: ev.title, start: o, end: new Date(+o + dur), allDay: ev.allDay });
-      }
-      if (r.FREQ === 'DAILY') s = new Date(s.getFullYear(), s.getMonth(), s.getDate() + iv, s.getHours(), s.getMinutes());
-      else if (r.FREQ === 'WEEKLY') s = new Date(s.getFullYear(), s.getMonth(), s.getDate() + 7 * iv, s.getHours(), s.getMinutes());
-      else if (r.FREQ === 'MONTHLY') s = new Date(s.getFullYear(), s.getMonth() + iv, s.getDate(), s.getHours(), s.getMinutes());
-      else if (r.FREQ === 'YEARLY') s = new Date(s.getFullYear() + iv, s.getMonth(), s.getDate(), s.getHours(), s.getMinutes());
-      else break;
-    }
-    return res;
-  }
-
-  function loadEvents() {
-    if (!cfg.ics) { renderEvents(); return; }
-    var u = String(cfg.ics).replace(/^webcal:\/\//i, 'https://');
-    if (cfg.proxy) u = cfg.proxy.indexOf('{url}') >= 0 ? cfg.proxy.replace('{url}', encodeURIComponent(u)) : cfg.proxy + encodeURIComponent(u);
-    get(u, function (err, txt) {
-      if (err) { $('events').innerHTML = '<div class="hint">カレンダーを取得できません（' + esc(err.message) + '）。CORSプロキシを設定してください。</div>'; $('evcount').innerHTML = ''; return; }
-      var now = new Date(), from = new Date(now.getFullYear(), now.getMonth(), now.getDate()), to = new Date(+from + 8 * 864e5);
-      var raw = parseICS(txt), list = [];
-      for (var i = 0; i < raw.length; i++) if (!raw[i].cancel) list = list.concat(expand(raw[i], from, to));
-      list.sort(function (a, b) { return (b.allDay ? 1 : 0) - (a.allDay ? 1 : 0) || a.start - b.start; });
-      events = list;
-      renderEvents();
-    });
-  }
-
-  function evRow(e, cur, color, when) {
-    return '<div class="ev fx aic' + (cur ? ' cur' : '') + '"><span class="dot" style="background:' + color + '"></span>' +
-      '<div style="min-width:0"><div class="tt ell">' + esc(e.title || '(無題)') + '</div>' +
-      '<div class="tm muted in">' + when + '</div></div></div>';
-  }
-
-  function renderEvents() {
-    var box = $('events');
-    if (!cfg.ics) { $('evcount').innerHTML = ''; box.innerHTML = '<div class="hint">右下の歯車から、カレンダーのICS URLを登録すると今日の予定が表示されます。</div>'; return; }
-    DOTS = [ACC, BLUE, '#7ED6A8'];
-    var now = new Date(), endToday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
-    var today = [], next = null;
-    for (var i = 0; i < events.length; i++) {
-      var e = events[i];
-      if (e.end <= now) continue;
-      if (e.start < endToday) today.push(e);
-      else if (!next || e.start < next.start) next = e;
-    }
-    today.sort(function (a, b) { return (b.allDay ? 1 : 0) - (a.allDay ? 1 : 0) || a.start - b.start; });
-    $('evcount').innerHTML = today.length ? today.length + '件' : '';
-    var h = '', curDone = false;
-    for (var k = 0; k < today.length && k < 4; k++) {
-      var t = today[k], cur = false;
-      if (!curDone && !t.allDay) { cur = true; curDone = true; }
-      h += evRow(t, cur, cur ? ACC : DOTS[1 + (k % 2)], t.allDay ? '終日' : hm(t.start) + ' – ' + hm(t.end));
-    }
-    if (!today.length) {
-      h = '<div class="hint" style="margin-bottom:12px">今日の予定はありません</div>';
-      if (next) {
-        var tmr = ymd(new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1)) === ymd(next.start);
-        var day = tmr ? '明日' : (next.start.getMonth() + 1) + '/' + next.start.getDate() + '（' + WD[next.start.getDay()] + '）';
-        h += evRow(next, true, BLUE, day + ' ' + (next.allDay ? '終日' : hm(next.start)));
-      }
-    }
-    box.innerHTML = h;
   }
 
   /* ---------- Apple Music ---------- */
@@ -587,7 +453,7 @@ body.night #dim{opacity:.78}
   }
 
   /* ---------- 設定画面 ---------- */
-  var FIELDS = ['clockLabel', 'accent', 'place', 'lat', 'lon', 'ics', 'proxy', 'music', 'mkToken', 'nightStart', 'nightEnd', 'reloadHours'];
+  var FIELDS = ['clockLabel', 'accent', 'place', 'lat', 'lon', 'music', 'mkToken', 'nightStart', 'nightEnd', 'reloadHours'];
   $('gear').onclick = function () {
     for (var i = 0; i < FIELDS.length; i++) $('s_' + FIELDS[i]).value = cfg[FIELDS[i]];
     $('modal').style.display = 'block';
@@ -629,7 +495,6 @@ body.night #dim{opacity:.78}
   tick();
   loadWeather(); setInterval(loadWeather, 15 * 60e3);
   loadHolidays(); setInterval(loadHolidays, 24 * 3600e3);
-  loadEvents(); setInterval(loadEvents, 10 * 60e3);
   renderMusic();
   // 焼き付き防止：3分ごとに数pxずらす
   setInterval(function () { jx = Math.round(Math.random() * 8 - 4); jy = Math.round(Math.random() * 8 - 4); fit(); }, 3 * 60e3);
