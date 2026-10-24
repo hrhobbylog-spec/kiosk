@@ -99,7 +99,9 @@ html,body{margin:0;padding:0;height:100%;background:#0B0C0F;color:#F2F2F0;overfl
 .disc{position:absolute;left:10px;top:10px;width:260px;height:260px;border-radius:50%;
   background:-webkit-repeating-radial-gradient(center,circle,#141518 0,#141518 2px,#1C1D21 3px,#141518 4px);
   background:repeating-radial-gradient(circle at center,#141518 0,#141518 2px,#1C1D21 3px,#141518 4px);
-  -webkit-animation:spin 1.8s linear infinite;animation:spin 1.8s linear infinite;-webkit-transform:translateZ(0)}
+  -webkit-animation:spin 1.8s linear infinite;animation:spin 1.8s linear infinite;-webkit-transform:translateZ(0);
+  -webkit-animation-play-state:paused;animation-play-state:paused}
+#c-music.on .disc{-webkit-animation-play-state:running;animation-play-state:running}
 .label{position:absolute;left:80px;top:80px;width:100px;height:100px;border-radius:50%;background-size:cover;background-position:center;overflow:hidden}
 .label .l1{position:absolute;left:0;right:0;top:22px;text-align:center;font-size:10px;font-weight:600;letter-spacing:.12em;color:#0B0C0F}
 .label .l2{position:absolute;left:0;right:0;bottom:22px;text-align:center;font-size:9px;letter-spacing:.08em;color:rgba(11,12,15,.7)}
@@ -107,7 +109,15 @@ html,body{margin:0;padding:0;height:100%;background:#0B0C0F;color:#F2F2F0;overfl
 .sheen{position:absolute;left:10px;top:10px;width:260px;height:260px;border-radius:50%;pointer-events:none;
   background:-webkit-linear-gradient(135deg,rgba(255,255,255,0) 30%,rgba(255,255,255,.07) 45%,rgba(255,255,255,0) 60%);
   background:linear-gradient(135deg,rgba(255,255,255,0) 30%,rgba(255,255,255,.07) 45%,rgba(255,255,255,0) 60%)}
-.arm{position:absolute;right:0;top:0}
+.arm{position:absolute;right:0;top:0;-webkit-transform-origin:78px 30px;transform-origin:78px 30px;
+  -webkit-transform:rotate(-10deg);transform:rotate(-10deg);-webkit-transition:-webkit-transform 1.2s;transition:transform 1.2s}
+#c-music.on .arm{-webkit-transform:rotate(0);transform:rotate(0)}
+#tt-stop{display:none;position:absolute;right:20px;top:20px;height:40px;padding:0 14px;border:0;border-radius:20px;background:#22252C;color:#F2F2F0;font-size:14px;z-index:2}
+#tt-stop svg{margin-right:6px}
+#c-music.on #tt-stop{display:-webkit-flex;display:flex}
+#c-music.on .tt-idle{display:none}
+.tt-play{display:none}
+#c-music.on .tt-play{display:inline}
 .tt-go{position:absolute;left:0;right:0;bottom:0;font-size:14px}
 .tt-go svg{margin-left:6px}
 @-webkit-keyframes spin{from{-webkit-transform:rotate(0)}to{-webkit-transform:rotate(360deg)}}
@@ -171,7 +181,7 @@ body.night #dim{opacity:.78}
 <button id="gear" aria-label="設定"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg></button>
 
 <div id="modal"><div class="box jp">
-  <h2>設定 <span class="muted" style="font-size:13px;font-weight:400">ver 2026-10-24a</span></h2>
+  <h2>設定 <span class="muted" style="font-size:13px;font-weight:400">ver 2026-10-24b</span></h2>
   <div class="fx row">
     <div><label for="s_clockLabel">時計の見出し</label><input id="s_clockLabel"></div>
     <div><label for="s_accent">アクセント色</label><input id="s_accent" placeholder="#FF9F45"></div>
@@ -182,6 +192,8 @@ body.night #dim{opacity:.78}
     <div><label for="s_lon">経度</label><input id="s_lon" inputmode="decimal"></div>
   </div>
   <button id="s_geo">現在地を使う</button>
+  <label for="s_spinMinutes">レコードを回す時間（分）。Spotifyを開いてからこの時間で止まります</label>
+  <input id="s_spinMinutes" inputmode="numeric">
   <label for="s_btShortcut">スピーカー接続ショートカットの名前（「ショートカット」アプリでの名前と同じに。空ならボタンを隠す）</label>
   <input id="s_btShortcut">
   <label for="s_music">Apple Music または Spotify の共有URL（プレイリスト・アルバムなど）</label>
@@ -199,7 +211,7 @@ body.night #dim{opacity:.78}
   'use strict';
   var W = 1194, H = 834;
   var DEFAULTS = { clockLabel: 'TOKYO', accent: '#FF9F45', place: '東京都', lat: 35.6812, lon: 139.7671,
-                   music: '', btShortcut: 'スピーカー接続', nightStart: 23, nightEnd: 6, reloadHours: 6 };
+                   music: '', spinMinutes: 60, btShortcut: 'スピーカー接続', nightStart: 23, nightEnd: 6, reloadHours: 6 };
   var KEY = 'kioskCfg';
   var WD = ['日', '月', '火', '水', '木', '金', '土'];
   var cfg = loadCfg();
@@ -379,6 +391,18 @@ body.night #dim{opacity:.78}
   }
   var KIND = { playlist: 'PLAYLIST', album: 'ALBUM', track: 'SINGLE', episode: 'EPISODE', show: 'PODCAST', artist: 'ARTIST' };
 
+  // 回転状態：タップから一定時間だけ回す（Spotifyの再生状態は取得できないため）
+  var TT_KEY = 'kioskSpinUntil', ttOn = false;
+  function ttUntil() { try { return +localStorage.getItem(TT_KEY) || 0; } catch (e) { return 0; } }
+  function ttSpin(on, restore) {
+    ttOn = on;
+    if (!restore) {
+      var until = on ? Date.now() + (+cfg.spinMinutes > 0 ? +cfg.spinMinutes : 60) * 60e3 : 0;
+      try { localStorage.setItem(TT_KEY, String(until)); } catch (e) {}
+    }
+    $('c-music').className = 'card jp' + (on ? ' on' : '');
+  }
+
   // レコードが回るカード。タップで Spotify アプリの該当ページを開く
   function renderTurntable(sp) {
     var box = $('c-music');
@@ -400,10 +424,16 @@ body.night #dim{opacity:.78}
             '<rect x="34" y="198" width="26" height="16" rx="3" transform="rotate(32 47 206)" fill="#C9CBD0"></rect>' +
           '</svg>' +
         '</div>' +
-        '<div class="tt-go fx aic center muted">タップして Spotify で再生' +
+        '<div class="tt-go fx aic center muted"><span class="tt-idle">タップして Spotify で再生</span><span class="tt-play">Spotify を開く</span>' +
           '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"></path></svg>' +
         '</div>' +
-      '</a>';
+      '</a>' +
+      '<button id="tt-stop" class="aic" aria-label="回転を止める"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="5" y="5" width="14" height="14" rx="2"></rect></svg>停止</button>';
+    box.style.position = 'absolute';
+    $('tt').onclick = function () { ttSpin(true); };
+    $('tt-stop').onclick = function () { ttSpin(false); };
+    ttSpin(ttUntil() > Date.now(), true);
+    setInterval(function () { if (ttOn && ttUntil() <= Date.now()) ttSpin(false); }, 30000);
     // タイトルとジャケットを取得（取れなければ既定の表示のまま）
     get('https://open.spotify.com/oembed?url=' + encodeURIComponent('https://open.spotify.com/' + sp.type + '/' + sp.id), function (err, txt) {
       if (err) return;
@@ -437,7 +467,7 @@ body.night #dim{opacity:.78}
   }
 
   /* ---------- 設定画面 ---------- */
-  var FIELDS = ['clockLabel', 'accent', 'place', 'lat', 'lon', 'music', 'btShortcut', 'nightStart', 'nightEnd', 'reloadHours'];
+  var FIELDS = ['clockLabel', 'accent', 'place', 'lat', 'lon', 'music', 'spinMinutes', 'btShortcut', 'nightStart', 'nightEnd', 'reloadHours'];
   $('gear').onclick = function () {
     for (var i = 0; i < FIELDS.length; i++) $('s_' + FIELDS[i]).value = cfg[FIELDS[i]];
     $('modal').style.display = 'block';
